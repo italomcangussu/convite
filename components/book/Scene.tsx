@@ -71,7 +71,15 @@ function InkPlanet() {
     </svg>
   );
 }
-export default function Scene({ variant = 0 }: { variant?: number }) {
+type SceneProps = {
+  variant?: number;
+  /** Fetch right away even when the picture is off screen. */
+  eager?: boolean;
+  /** Called once the picture finished loading, or failed to. */
+  onReady?: () => void;
+};
+
+export default function Scene({ variant = 0, eager, onReady }: SceneProps) {
   if (variant === 4) return <InkPlanet />;
   const source =
     variant === 2
@@ -89,7 +97,9 @@ export default function Scene({ variant = 0 }: { variant?: number }) {
         alt=""
         fill
         sizes="(max-width: 500px) 340px, 380px"
-        loading={variant === 0 || variant === 1 ? "eager" : "lazy"}
+        loading={eager || variant === 0 || variant === 1 ? "eager" : "lazy"}
+        onLoad={onReady}
+        onError={onReady}
         style={{ objectFit: "contain" }}
         draggable={false}
       />
