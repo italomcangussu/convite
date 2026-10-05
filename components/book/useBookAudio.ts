@@ -9,8 +9,12 @@ import {
 import { clampVolume, downloadAudio, fadeIn, resolveStartAt } from "@/lib/audio";
 import type { AudioLoad } from "@/lib/loading";
 
-/** After this long the book stops waiting and streams the track instead. */
-const GATE_MS = 15_000;
+/**
+ * After this long the book stops waiting and streams the track instead.
+ * Keep it below the cover's own "slow" bypass (14 s in Book.tsx) so the track
+ * always settles (in memory or streaming) before the book can be opened.
+ */
+const GATE_MS = 12_000;
 /** A connection that goes quiet this long is treated as stalled. */
 const STALL_MS = 6_000;
 

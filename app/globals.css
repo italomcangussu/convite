@@ -1624,20 +1624,6 @@ cite {
     transform: rotate(-28deg) translateX(-240px);
   }
 }
-.universe[data-phase="opening"] .ambient-stars {
-  animation: stars-flare 1.5s ease-out;
-}
-@keyframes stars-flare {
-  0% {
-    filter: brightness(1);
-  }
-  30% {
-    filter: brightness(2.2);
-  }
-  100% {
-    filter: brightness(1);
-  }
-}
 
 /* Capa: entra em cascata, a estrela se desenha como nanquim e um brilho
    atravessa o tecido quando o livro está pronto para abrir. */
@@ -2144,6 +2130,36 @@ cite {
   .shooting-star,
   .cover-sheen,
   .spark-burst {
+    display: none;
+  }
+}
+
+/* Vinheta do planeta (página dos presentes): ocupa o espaço que sobra e o
+   desenho se ajusta à altura disponível em vez de ser cortado. */
+.page .gift-vignette {
+  position: relative;
+  flex: 1 1 56px;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: 120px;
+  margin-top: 12px;
+  overflow: visible;
+}
+.page .gift-vignette .scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+}
+/* Sem espaço para o planeta inteiro (página cheia): some em vez de virar um ponto. */
+.page .gift-vignette {
+  container: gift / size;
+}
+@container gift (max-height: 38px) {
+  .scene {
     display: none;
   }
 }

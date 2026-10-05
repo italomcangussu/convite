@@ -46,9 +46,20 @@ RSVP registra família, UUID, data/hora do banco e status. Público tem INSERT, 
 
 ## Música e conteúdo pendentes
 
-Definir pelo painel: data, horário, local/endereço, textos/citações finais, sugestões definitivas e música com direito de uso. Nenhuma trilha é incluída: ela inicia após abrir o livro quando um arquivo estiver configurado, persiste entre páginas e tem pausa discreta. O áudio não é armazenado no repositório.
+Definir pelo painel: data, horário, local/endereço, textos/citações finais, sugestões definitivas e música com direito de uso. Nenhuma trilha é incluída. O áudio não é armazenado no repositório.
+
+Como a música toca:
+
+- Assim que o convite carrega, a trilha é baixada para a memória do aparelho (com progresso na própria barra do botão). O iOS/Safari não pré-carrega mídia remota antes de um toque; baixando antes, o `play()` do toque em "Abrir o livro" já encontra o arquivo pronto e a música começa junto com a capa.
+- `play()` roda de forma síncrona dentro do toque (exigência do iOS) e o livro abre no mesmo instante, sem esperar a promessa de reprodução. O volume sobe aos poucos (onde o aparelho permite; o iOS ignora `volume`).
+- Se o download falhar ou passar de 12 s, a trilha é tocada por streaming a partir do toque; se o arquivo for inválido, o botão passa a dizer "Abrir sem música". Se o navegador recusar o `play()`, o botão de música pulsa com o convite "Toque para ouvir a música".
+- A música pausa quando a aba/o app vai para segundo plano e retorna se estava tocando.
 
 Não há atribuição automática das frases provisórias a Saint-Exupéry. O campo de autoria fica vazio até a citação definitiva ser fornecida.
+
+## Quando o livro abre
+
+O botão da capa só fica ativo quando o livro carregou: texto do convite (Supabase), ilustrações, fontes e, se houver, a trilha. A própria barra do botão mostra o progresso. Se o texto não puder ser buscado (3 tentativas), o livro **não** abre com o conteúdo de rascunho, para não mostrar dados errados aos convidados: aparece "Tentar novamente". Ilustrações, fontes e música lentas deixam de bloquear após 14 s para que um único pedido travado não impeça o acesso. Sem credenciais do Supabase o convite usa `lib/content.ts` e abre assim que a arte carrega.
 
 ## Verificação
 
@@ -61,7 +72,17 @@ npx playwright install chromium webkit
 npm run test:e2e
 ```
 
-Testes unitários cobrem geração de links e data. Testes de navegador cobrem leitura, abertura, bordas, swipe/cancelamento, teclado, RSVP sem backend e proteção do admin, em Chromium mobile/desktop e WebKit mobile. Login, edição, upload, áudio e persistência em Supabase real exigem configurar um projeto; não são declarados validados por estes testes de interface.
+Testes unitários cobrem geração de links e data, o download/fade da trilha e a regra de quando o livro pode abrir. Testes de navegador cobrem leitura, abertura só depois do carregamento, bordas, swipe que acompanha o dedo/cancelamento, teclado, RSVP sem backend e proteção do admin, em Chromium mobile/desktop e WebKit mobile.
+
+`tests/audio.spec.ts` exercita o caminho com Supabase (trilha em memória, `play()` no toque, falha do texto com nova tentativa, trilha indisponível) interceptando todas as chamadas; ele só roda com as variáveis públicas definidas e, por isso, fica ignorado na suíte padrão:
+
+```sh
+NEXT_PUBLIC_SUPABASE_URL=https://exemplo.supabase.co \
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=chave \
+npm run test:e2e -- tests/audio.spec.ts
+```
+
+Login, edição, upload e persistência em Supabase real exigem configurar um projeto; não são declarados validados por estes testes. Reprodução de áudio em aparelho iOS real também não é coberta (só Chromium foi executado para o áudio).
 
 ## Deploy
 
@@ -96,6 +117,9 @@ Metadados e imagem de compartilhamento estão em `app/layout.tsx` e `public/og.s
 ## Áreas principais
 
 - `components/book/Book.tsx`: estado, gestos, capítulos e RSVP.
+- `components/book/useBookAudio.ts`: trilha (download em memória, play no toque, fade, pausa em segundo plano).
+- `components/book/useInvitationContent.ts`: busca do texto com tentativas e estado de erro.
+- `lib/audio.ts`, `lib/loading.ts`: helpers puros testados (download, fade, regra de abertura).
 - `components/book/Scene.tsx`: cenas, imagens otimizadas e planeta em SVG.
 - `public/illustrations/`: três artes com transparência.
 - `docs/art-direction/`: direção de arte e prompts usados na geração integrada de imagens.
@@ -106,7 +130,7 @@ Metadados e imagem de compartilhamento estão em `app/layout.tsx` e `public/og.s
 - `supabase/migrations/`: estrutura, RLS e storage.
 - `docs/design.md`: direção visual e decisões.
 
-A virada usa CSS 3D sem biblioteca pesada. Gestos acompanham rotação parcial; curto retorna à posição inicial. Não é uma simulação de papel com malha/deformação, mantendo fluidez mobile.
+A virada usa CSS 3D (desktop) ou deslize 2D (até 500 px, por causa do Safari/iOS) sem biblioteca pesada. A folha acompanha o dedo mostrando a próxima página por baixo, com sombra projetada; ao soltar além do limite a virada continua de onde o dedo parou, e ao soltar curto a folha volta com uma mola. Não é uma simulação de papel com malha/deformação, mantendo fluidez mobile.
 
 A suíte também executa a migration em PostgreSQL embarcado (PGlite), com schemas Auth/Storage mínimos para verificar RLS: público não lê famílias nem altera conteúdo/áudio; contas comuns não acessam RSVPs; admins podem editar e remover. Isto valida SQL e permissões, não substitui um teste ponta a ponta com os serviços Supabase reais.
 
