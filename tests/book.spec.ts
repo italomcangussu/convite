@@ -89,7 +89,7 @@ test("WebKit usa o mesmo toque para iniciar a música e abrir o livro", async ({
     HTMLMediaElement.prototype.play = function () {
       const state = window as Window & { __invitationPlayCalls?: number };
       state.__invitationPlayCalls = (state.__invitationPlayCalls ?? 0) + 1;
-      return new Promise<void>((resolve) => setTimeout(resolve, 80));
+      return new Promise<void>((resolve) => setTimeout(resolve, 500));
     };
   });
 
