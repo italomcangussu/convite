@@ -14,3 +14,7 @@ test-results/
 output/
 .superpowers/
 supabase/.temp/
+.fabuloso/checkpoint*.md
+
+# Claude agentmap (cache gerado)
+.claude/agentmap/
