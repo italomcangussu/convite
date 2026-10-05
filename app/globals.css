@@ -2427,3 +2427,22 @@ body {
     transform: translateY(26px) scale(0.96);
   }
 }
+
+/* Painel: botão de exportar a lista por WhatsApp. */
+.admin-shell button.whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #25d366;
+  color: #08210f;
+  font-weight: 600;
+}
+.admin-shell button.whatsapp svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+.admin-shell button.whatsapp:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

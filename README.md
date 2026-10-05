@@ -40,7 +40,7 @@ insert into public.admins(user_id) values ('UUID-DO-USUARIO');
 
 Somente a tabela `admins` autoriza administração; uma conta autenticada sem associação não tem acesso. Abra `/admin`, entre com e-mail e senha. Para revogar, remova a linha de `admins` no SQL Editor: a RLS consulta associação atual, sem depender de metadados editáveis ou JWT com permissões antigas.
 
-O painel permite editar identidade, textos, frase e autoria, data, formato, horário, endereço, sugestões ordenadas e sua visibilidade; enviar/substituir/remover música, ouvir prévia e ajustar volume; pesquisar, ordenar, remover e exportar RSVPs. Google Maps e Waze são gerados pelo endereço, sem APIs pagas ou iframe.
+O painel permite editar identidade, textos, frase e autoria, data, formato, horário, endereço, sugestões ordenadas e sua visibilidade; enviar/substituir/remover música, ouvir prévia e ajustar volume; pesquisar, ordenar, remover e exportar RSVPs (CSV ou uma lista numerada pronta para enviar por WhatsApp). Google Maps e Waze são gerados pelo endereço, sem APIs pagas ou iframe.
 
 RSVP registra família, UUID, data/hora do banco e status. Público tem INSERT, sem SELECT/UPDATE/DELETE. O UUID do navegador torna reenvio idempotente. Contatos da família não são coletados. Em produção de grande alcance, considerar limitação de requisições/CAPTCHA para evitar spam.
 
@@ -60,6 +60,10 @@ Não há atribuição automática das frases provisórias a Saint-Exupéry. O ca
 ## Confirmação de presença
 
 O livro tem seis páginas; o sétimo capítulo, a confirmação, abre como modal quando se aperta "Confirmar presença" (o "Próxima página" da última página), puxa a folha para frente, toca a borda direita ou usa a seta para a direita nela. A família digita o nome e confirma; depois aparece o agradecimento e, ao reabrir, o modal já mostra a presença confirmada (o UUID/nome ficam em `localStorage`). O modal segue a área visível do iPhone (`visualViewport`), então o cartão fica acima do teclado; Esc, o X e o toque fora fecham.
+
+### Exportar por WhatsApp
+
+Na aba "Confirmações" do painel, "Exportar por WhatsApp" monta uma mensagem com a lista que está na tela (mesma pesquisa e ordem do CSV): título, quantas famílias, data/hora da leitura e as famílias numeradas. Ele abre `wa.me` sem número, então o WhatsApp deixa escolher a conversa ou o grupo. Listas grandes demais para o link (mais de uns 6 mil caracteres) são copiadas para a área de transferência, e o painel avisa para colar na conversa. Só os nomes das famílias saem do painel; contatos não são coletados.
 
 ## Quando o livro abre
 
