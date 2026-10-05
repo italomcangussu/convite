@@ -94,11 +94,14 @@ export default function Book() {
     lock.current = true;
     setDrag(0);
     setTurn(direction);
-    timer.current = setTimeout(() => {
-      setPage((p) => p + direction);
-      setTurn(0);
-      lock.current = false;
-    }, 650);
+    timer.current = setTimeout(() => finishTurn(direction), 1000);
+  }
+  function finishTurn(direction: number) {
+    if (!lock.current) return;
+    if (timer.current) clearTimeout(timer.current);
+    setPage((p) => p + direction);
+    setTurn(0);
+    lock.current = false;
   }
   function open() {
     if (lock.current) return;
@@ -374,11 +377,13 @@ export default function Book() {
             </article>
           }
           <article
+            key={page}
             ref={leafRef}
             onAnimationEnd={(e) => {
-              if (e.target === e.currentTarget && e.animationName === "turnNext" && page === -1) {
-                finishOpening();
-              }
+              if (e.target !== e.currentTarget) return;
+              if (e.animationName !== "turnNext" && e.animationName !== "turnPrev") return;
+              if (page === -1) finishOpening();
+              else if (turn) finishTurn(turn);
             }}
             className={`page active-page ${page === -1 ? "cover" : ""} ${drag ? "is-dragging" : ""} ${turn === 1 ? "turn-next" : turn === -1 ? "turn-prev" : ""}`}
             style={
