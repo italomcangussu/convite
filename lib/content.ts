@@ -24,6 +24,7 @@ export type Content = {
   closing: string;
   audioPath: string;
   audioName: string;
+  audioStartAt: number;
   volume: number;
 };
 export const defaults: Content = {
@@ -66,6 +67,7 @@ export const defaults: Content = {
   closing: "Algumas estrelas brilham ainda mais quando estamos juntos.",
   audioPath: "",
   audioName: "",
+  audioStartAt: 7.58,
   volume: 0.35,
 };
 export function maps(address: string) {

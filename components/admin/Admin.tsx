@@ -153,7 +153,12 @@ export default function Admin() {
       setBusy(false);
       return;
     }
-    const next = { ...content, audioPath: path, audioName: file.name };
+    const next = {
+      ...content,
+      audioPath: path,
+      audioName: file.name,
+      audioStartAt: 0,
+    };
     const { error: saveError } = await supabase
       .from("site_settings")
       .update({ content: next })
@@ -420,6 +425,26 @@ export default function Admin() {
                   </button>
                 </>
               )}
+              <label>
+                Cortar silêncio inicial — {content.audioStartAt.toFixed(2)} s
+                <input
+                  type="number"
+                  min="0"
+                  max="60"
+                  step="0.05"
+                  value={content.audioStartAt}
+                  disabled={busy || !content.audioPath}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      audioStartAt: Math.min(
+                        60,
+                        Math.max(0, Number(e.target.value) || 0),
+                      ),
+                    })
+                  }
+                />
+              </label>
               <label>
                 Volume padrão — {Math.round(content.volume * 100)}%
                 <input

@@ -59,19 +59,34 @@ export default function Book() {
       if (timer.current) clearTimeout(timer.current);
     };
   }, []);
-  async function toggleAudio() {
-    if (!audio.current || !content.audioPath) return;
-    if (playing) {
-      audio.current.pause();
+  function startAudioFromGesture() {
+    const player = audio.current;
+    if (!player || !content.audioPath || !player.paused) return;
+
+    player.volume = content.volume;
+    if (player.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      const startAt = Math.max(0, content.audioStartAt);
+      const safeStartAt = Number.isFinite(player.duration)
+        ? Math.min(startAt, Math.max(0, player.duration - 0.25))
+        : startAt;
+      if (player.currentTime < safeStartAt) player.currentTime = safeStartAt;
+    }
+
+    // Call play synchronously from the user's click handler so Safari sees
+    // the playback request as part of the gesture that opened the book.
+    const playback = player.play();
+    setPlaying(true);
+    void playback.catch(() => setPlaying(false));
+  }
+
+  function toggleAudio() {
+    const player = audio.current;
+    if (!player || !content.audioPath) return;
+    if (!player.paused) {
+      player.pause();
       setPlaying(false);
     } else {
-      audio.current.volume = content.volume;
-      try {
-        await audio.current.play();
-        setPlaying(true);
-      } catch {
-        setPlaying(false);
-      }
+      startAudioFromGesture();
     }
   }
   function navigate(direction: number) {
@@ -89,7 +104,7 @@ export default function Book() {
     if (lock.current) return;
     lock.current = true;
     setTurn(1);
-    void toggleAudio();
+    startAudioFromGesture();
     timer.current = setTimeout(finishOpening, 1200);
   }
   function finishOpening() {
@@ -491,7 +506,29 @@ export default function Book() {
             ref={audio}
             src={audioUrl}
             loop
-            preload="none"
+            preload="metadata"
+            onLoadedMetadata={(event) => {
+              const player = event.currentTarget;
+              const startAt = Math.max(0, content.audioStartAt);
+              const safeStartAt = Number.isFinite(player.duration)
+                ? Math.min(startAt, Math.max(0, player.duration - 0.25))
+                : startAt;
+              if (player.currentTime < safeStartAt)
+                player.currentTime = safeStartAt;
+            }}
+            onTimeUpdate={(event) => {
+              const player = event.currentTarget;
+              const startAt = Math.max(0, content.audioStartAt);
+              if (
+                !player.paused &&
+                startAt > 0 &&
+                player.currentTime < Math.min(0.5, startAt / 2)
+              ) {
+                player.currentTime = startAt;
+              }
+            }}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
             onError={() => setPlaying(false)}
           />
           <button
