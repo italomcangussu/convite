@@ -258,16 +258,6 @@ export default function Book() {
         ? "Abrir sem música"
         : "Abrir o livro";
 
-  useEffect(() => {
-    setAudioFailed(false);
-    if (!audioUrl) {
-      setAudioReady(settingsLoaded);
-      return;
-    }
-    setAudioReady(false);
-    audio.current?.load();
-  }, [audioUrl, settingsLoaded]);
-
   function body(p: number, behind = false) {
     return (
       <>
