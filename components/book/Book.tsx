@@ -574,7 +574,7 @@ export default function Book() {
               setPlaying(false);
             }}
           />
-          {audioUrl && !audioFailed && (
+          {page >= 0 && audioUrl && !audioFailed && (
             <button
               className="audio-control"
               onClick={toggleAudio}
