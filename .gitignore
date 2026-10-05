@@ -18,3 +18,4 @@ supabase/.temp/
 
 # Claude agentmap (cache gerado)
 .claude/agentmap/
+.slice-debug/

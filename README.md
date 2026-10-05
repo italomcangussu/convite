@@ -138,8 +138,10 @@ Metadados e imagem de compartilhamento estão em `app/layout.tsx` e `public/og.s
 - `components/book/useBookAudio.ts`: trilha (download em memória, play no toque, fade, pausa em segundo plano).
 - `components/book/useInvitationContent.ts`: busca do texto com tentativas e estado de erro.
 - `lib/audio.ts`, `lib/loading.ts`: helpers puros testados (download, fade, regra de abertura).
-- `components/book/Scene.tsx`: cenas, imagens otimizadas e planeta em SVG.
-- `public/illustrations/`: três artes com transparência.
+- `components/book/Scene.tsx`: cenas em camadas animadas (Web Animations API) e planeta em SVG.
+- `components/book/art.ts`, `art-manifest.json`: como cada camada da arte se move e onde fica.
+- `scripts/slice_art.py`: fatia os PNGs em camadas WebP (`python3 scripts/slice_art.py`, requer `pillow numpy scipy`).
+- `public/illustrations/`: as três artes originais com transparência e, em `layers/`, as camadas geradas.
 - `docs/art-direction/`: direção de arte e prompts usados na geração integrada de imagens.
 - `components/admin/`: `Admin.tsx` (autenticação, dados, salvar) e um arquivo por seção (`Overview`, `ContentPanels`, `GiftsPanel`, `MusicPanel`, `RsvpPanel`); estilo em `app/admin/admin.css`.
 - `components/ui/Icon.tsx`: conjunto de ícones SVG do site todo.

@@ -21,6 +21,18 @@ Princípio: a abertura é o momento mais importante. O livro só abre quando est
 
 Regras de segurança para o Safari/iOS (não quebrar): sem 3D/backface no celular; só `transform`/`opacity` animam dentro das folhas; nenhuma animação de entrada nos filhos da folha ativa (ela substitui a folha de baixo por uma "janela" de dois quadros, e um fade de entrada piscaria); animações infinitas no botão usam `box-shadow` ou pseudo-elementos para não mudar a caixa do botão (o Playwright espera a posição estabilizar antes de clicar).
 
+## Ilustrações em movimento
+
+As três artes (capa/fim, rosa na redoma, avião) respiram de forma sutil, sem tirar a atenção do texto nem da virada. Cada PNG é fatiado em camadas (`scripts/slice_art.py`): estrelas, lua, planeta, nuvem, hélice, rosa e o cachecol em três fatias encadeadas que balançam uma depois da outra (onda). Empilhadas em repouso, as camadas dão de volta a arte original (o script confere), então nada muda para quem usa movimento reduzido.
+
+- Movimento: o corpo flutua numa figura de oito (poucos pixels), a lua e o planeta embalam, as estrelas piscam uma de cada vez, a nuvem passa devagar, a hélice "gira" (escala e opacidade), a rosa balança na haste. Luzes por cima da arte (halo da lua, brilhos, riscos de vento no avião, vaga-lumes na redoma) ficam invisíveis até animar.
+- Um relógio só: todas as animações (Web Animations API) começam em `startTime = 0`, então duas cópias da mesma cena (a página de baixo e a nova folha, capa e primeira página) estão sempre na mesma fase e a figura não pula quando muda de mãos.
+- Folhas: a página que o dedo arrasta ou que vira fica parada (`live={false}`: o trabalho é da virada) e a de baixo já se move; a decoração atrás da capa fica parada. `prefers-reduced-motion` desliga tudo (as animações da API não obedecem ao CSS, o `Scene` checa a mídia).
+- Medidas em `cqw` (1% da largura da cena): o mesmo balanço proporcional no celular e no desktop. Só `translate`, `rotate`, `scale` e `opacity` (propriedades individuais, compostas na GPU).
+- Peso: ~0,9 MB de WebP no total (antes ~4,7 MB de PNG). Os nomes levam hash do conteúdo e saem com `Cache-Control: immutable` (`next.config.ts`).
+
+Para mudar uma arte: troque o PNG em `public/illustrations/`, rode `python3 scripts/slice_art.py` (precisa de `pillow numpy scipy`; `--debug` grava sobreposições em `.slice-debug/`) e ajuste `components/book/art.ts` se uma camada nova precisar de movimento. `tests/art.test.ts` falha se o manifesto e o movimento descasarem.
+
 ## Confirmação de presença em modal e iPhone
 
 A intenção final do convite é a família digitar o nome e confirmar. Por isso o RSVP não é uma folha: a última página do livro ("Até as estrelas") termina com "Falta só um passo" e o botão de próxima página vira "Confirmar presença" (com anel de brilho), abrindo o modal. O capítulo continua contado como "07" para a conta fechar.

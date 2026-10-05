@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 
 test("o livro só abre depois que a arte da capa carregou", async ({ page }) => {
-  // Segura as imagens otimizadas até a hora de liberar.
+  // Segura as camadas da ilustração até a hora de liberar.
   let release!: () => void;
   const gate = new Promise<void>((resolve) => (release = resolve));
-  await page.route("**/_next/image**", async (route) => {
+  await page.route("**/illustrations/layers/**", async (route) => {
     await gate;
     await route.continue();
   });

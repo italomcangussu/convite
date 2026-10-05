@@ -19,3 +19,8 @@ Uma entrada por sessão: data, o que mudou no contexto e por quê.
 - PR #1 foi mergeado pelo usuário antes do CI terminar; o CI (WebKit móvel, `book.spec.ts` "abre o livro, navega pelas bordas…") já falhava no commit base 38d4e94 (esperas fixas de 720 ms entre viradas).
 - Mudança estrutural: o RSVP deixou de ser folha do livro e virou modal (`RsvpDialog`, `SparkBurst`); o livro passou a ter 6 folhas. `arquitetura.md` e `CLAUDE.md` atualizados.
 - iPhone: `viewport` (theme-color), aviso de telefone deitado, alvo de toque de 48 px no botão de música, fallback `100vh` antes de `svh/dvh`.
+
+## 2026-10-05 — sessão (cont.): ilustrações animadas
+- Mudança estrutural: pasta `scripts/` (slicer em Python) e `public/illustrations/layers/` (sprites WebP com hash no nome, `immutable` via `next.config.ts`); `Scene.tsx` deixou de usar `next/image` e monta camadas animadas (`art.ts` + `art-manifest.json`). `arquitetura.md`, `CLAUDE.md`, `README.md` e `docs/design.md` atualizados.
+- Decisões: relógio único (`startTime = 0`) em vez de pausar/retomar por instância, para a página de baixo e a nova folha ficarem em fase; `live` congela a folha arrastada; medidas em `cqw`.
+- Observação: WebKit/iPhone real não testados nesta máquina (só Chromium); `container-type: size`, `cqw` e as propriedades individuais `translate/rotate/scale` exigem iOS 16+.

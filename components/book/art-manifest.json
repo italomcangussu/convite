@@ -1,0 +1,333 @@
+{
+ "width": 1100,
+ "scenes": {
+  "telescope": {
+   "height": 880,
+   "layers": [
+    {
+     "id": "moon",
+     "file": "telescope-moon.6f09412a.webp",
+     "x": 855,
+     "y": 67,
+     "w": 103,
+     "h": 137,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-a",
+     "file": "telescope-star-a.821a0857.webp",
+     "x": 682,
+     "y": 71,
+     "w": 55,
+     "h": 61,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-b",
+     "file": "telescope-star-b.fc829d19.webp",
+     "x": 191,
+     "y": 188,
+     "w": 54,
+     "h": 53,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-c",
+     "file": "telescope-star-c.74962f93.webp",
+     "x": 333,
+     "y": 52,
+     "w": 53,
+     "h": 48,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-d",
+     "file": "telescope-star-d.b64777e5.webp",
+     "x": 978,
+     "y": 279,
+     "w": 46,
+     "h": 47,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "body",
+     "file": "telescope-body.268ba0dd.webp",
+     "x": 69,
+     "y": 107,
+     "w": 909,
+     "h": 760,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "scarf-a",
+     "file": "telescope-scarf-a.1ab0aa8f.webp",
+     "x": 320,
+     "y": 300,
+     "w": 119,
+     "h": 115,
+     "parent": "body",
+     "pivot": [
+      430,
+      321.4
+     ],
+     "behind": false
+    },
+    {
+     "id": "scarf-b",
+     "file": "telescope-scarf-b.e6bd213b.webp",
+     "x": 200,
+     "y": 302,
+     "w": 129,
+     "h": 153,
+     "parent": "scarf-a",
+     "pivot": [
+      320,
+      373.5
+     ],
+     "behind": false
+    },
+    {
+     "id": "scarf-c",
+     "file": "telescope-scarf-c.5ce61588.webp",
+     "x": 71,
+     "y": 304,
+     "w": 138,
+     "h": 114,
+     "parent": "scarf-b",
+     "pivot": [
+      200,
+      334.5
+     ],
+     "behind": false
+    },
+    {
+     "id": "rose",
+     "file": "telescope-rose.1a6e606e.webp",
+     "x": 834,
+     "y": 402,
+     "w": 115,
+     "h": 147,
+     "parent": "body",
+     "pivot": [
+      880.5,
+      540.0
+     ],
+     "behind": false
+    }
+   ]
+  },
+  "rose-moon": {
+   "height": 880,
+   "layers": [
+    {
+     "id": "moon",
+     "file": "rose-moon-moon.62b94ee5.webp",
+     "x": 823,
+     "y": 90,
+     "w": 168,
+     "h": 206,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-a",
+     "file": "rose-moon-star-a.3755eaa5.webp",
+     "x": 292,
+     "y": 88,
+     "w": 86,
+     "h": 87,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-b",
+     "file": "rose-moon-star-b.2bca182b.webp",
+     "x": 840,
+     "y": 380,
+     "w": 72,
+     "h": 70,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-c",
+     "file": "rose-moon-star-c.f7464e91.webp",
+     "x": 189,
+     "y": 316,
+     "w": 68,
+     "h": 76,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "body",
+     "file": "rose-moon-body.b847884c.webp",
+     "x": 203,
+     "y": 70,
+     "w": 719,
+     "h": 768,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "rose",
+     "file": "rose-moon-rose.aa3b0214.webp",
+     "x": 417,
+     "y": 233,
+     "w": 253,
+     "h": 278,
+     "parent": "body",
+     "pivot": [
+      530.5,
+      502.0
+     ],
+     "behind": false
+    }
+   ]
+  },
+  "flight": {
+   "height": 846,
+   "layers": [
+    {
+     "id": "cloud",
+     "file": "flight-cloud.de58bd8d.webp",
+     "x": 42,
+     "y": 656,
+     "w": 321,
+     "h": 127,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "planet",
+     "file": "flight-planet.45d28265.webp",
+     "x": 829,
+     "y": 87,
+     "w": 222,
+     "h": 137,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-a",
+     "file": "flight-star-a.02a17cb3.webp",
+     "x": 741,
+     "y": 246,
+     "w": 70,
+     "h": 73,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-b",
+     "file": "flight-star-b.ee9b89c1.webp",
+     "x": 994,
+     "y": 593,
+     "w": 70,
+     "h": 75,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "star-c",
+     "file": "flight-star-c.8cb6269f.webp",
+     "x": 318,
+     "y": 109,
+     "w": 68,
+     "h": 71,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "body",
+     "file": "flight-body.98a74222.webp",
+     "x": 73,
+     "y": 149,
+     "w": 998,
+     "h": 632,
+     "parent": null,
+     "pivot": null,
+     "behind": false
+    },
+    {
+     "id": "scarf-a",
+     "file": "flight-scarf-a.938cfbcf.webp",
+     "x": 330,
+     "y": 236,
+     "w": 134,
+     "h": 55,
+     "parent": "body",
+     "pivot": [
+      455,
+      264.0
+     ],
+     "behind": false
+    },
+    {
+     "id": "scarf-b",
+     "file": "flight-scarf-b.9e308219.webp",
+     "x": 200,
+     "y": 190,
+     "w": 139,
+     "h": 137,
+     "parent": "scarf-a",
+     "pivot": [
+      330,
+      259.5
+     ],
+     "behind": false
+    },
+    {
+     "id": "scarf-c",
+     "file": "flight-scarf-c.15ae9d3c.webp",
+     "x": 74,
+     "y": 194,
+     "w": 135,
+     "h": 110,
+     "parent": "scarf-b",
+     "pivot": [
+      200,
+      230.7
+     ],
+     "behind": false
+    },
+    {
+     "id": "prop",
+     "file": "flight-prop.52c2aaf6.webp",
+     "x": 888,
+     "y": 367,
+     "w": 108,
+     "h": 332,
+     "parent": "body",
+     "pivot": [
+      932.0,
+      526.0
+     ],
+     "behind": true
+    }
+   ]
+  }
+ }
+}
