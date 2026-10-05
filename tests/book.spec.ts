@@ -75,3 +75,51 @@ test("admin permanece protegido", async ({ page }) => {
     page.getByRole("button", { name: "Salvar alterações" }),
   ).toHaveCount(0);
 });
+
+
+test("WebKit prepara a música antes de abrir e toca no gesto do usuário", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "webkit", "Regressão específica do Safari/WebKit.");
+
+  await page.addInitScript(() => {
+    (window as Window & { __invitationPlayCalls?: number }).__invitationPlayCalls =
+      0;
+    HTMLMediaElement.prototype.play = function () {
+      const state = window as Window & { __invitationPlayCalls?: number };
+      state.__invitationPlayCalls = (state.__invitationPlayCalls ?? 0) + 1;
+      return Promise.resolve();
+    };
+  });
+
+  await page.goto("/");
+
+  const audio = page.locator("audio");
+  await expect(audio).toHaveCount(1);
+  await expect(audio).toHaveAttribute("preload", "auto");
+
+  const src = await audio.getAttribute("src");
+  test.skip(
+    !src,
+    "Supabase sem trilha configurada neste ambiente; teste de reprodução requer audioPath.",
+  );
+
+  const openButton = page.getByRole("button", {
+    name: /Abrir o livro|Carregando música|Preparando convite/,
+  });
+
+  await audio.dispatchEvent("canplay");
+  await expect(openButton).toBeEnabled();
+  await openButton.click();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __invitationPlayCalls?: number })
+            .__invitationPlayCalls ?? 0,
+      ),
+    )
+    .toBe(1);
+});
