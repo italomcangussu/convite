@@ -253,6 +253,9 @@ p {
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
 }
+.under-page.is-settling {
+  z-index: 3;
+}
 .cover {
   padding: 44px 29px 27px;
   background:
