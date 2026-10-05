@@ -147,7 +147,10 @@ export default function Admin() {
     const path = `${crypto.randomUUID()}.${file.name.split(".").pop()?.toLowerCase()}`;
     const { error } = await supabase.storage
       .from("soundtracks")
-      .upload(path, file, { contentType: file.type });
+      .upload(path, file, {
+        contentType: file.type,
+        cacheControl: "31536000",
+      });
     if (error) {
       setMessage("Não foi possível enviar a música.");
       setBusy(false);
