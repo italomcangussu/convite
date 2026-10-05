@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { displayDate, maps } from "@/lib/content";
 import { bookLoad } from "@/lib/loading";
+import Icon from "@/components/ui/Icon";
 import { supabase } from "@/lib/supabase";
 import Scene from "./Scene";
 import InkStar from "./InkStar";
@@ -337,11 +338,25 @@ export default function Book() {
             </p>
             {content.address && (
               <div className="map-actions">
-                <a href={links.google} target="_blank" rel="noreferrer">
-                  Google Maps ↗
+                <a
+                  href={links.google}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Google Maps: abrir rota em nova aba"
+                >
+                  <Icon name="pin" size={16} />
+                  <span>Google Maps</span>
+                  <Icon name="external" size={13} className="map-external" />
                 </a>
-                <a href={links.waze} target="_blank" rel="noreferrer">
-                  Waze ↗
+                <a
+                  href={links.waze}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Waze: abrir rota em nova aba"
+                >
+                  <Icon name="route" size={16} />
+                  <span>Waze</span>
+                  <Icon name="external" size={13} className="map-external" />
                 </a>
               </div>
             )}
@@ -623,10 +638,10 @@ export default function Book() {
                   )}
                   <span className="open-book-label">{openingLabel}</span>
                   {phase === "ready" && (
-                    <span className="open-book-arrow" aria-hidden="true">→</span>
+                    <Icon name="arrowRight" size={20} className="open-book-arrow" />
                   )}
                   {phase === "error" && (
-                    <span className="open-book-arrow" aria-hidden="true">↻</span>
+                    <Icon name="refresh" size={18} className="open-book-arrow" />
                   )}
                   {phase === "loading" && (
                     <span className="open-book-progress" aria-hidden="true" />
@@ -691,7 +706,7 @@ export default function Book() {
           inert={page < 0}
         >
           <button type="button" className="page-previous" disabled={page <= 0 || !!turn} onClick={() => navigate(-1)}>
-            <span aria-hidden="true">←</span> Página anterior
+            <Icon name="arrowLeft" size={18} /> Página anterior
           </button>
           <button
             ref={nextButton}
@@ -709,7 +724,7 @@ export default function Book() {
               </>
             ) : (
               <>
-                Próxima página <span aria-hidden="true">→</span>
+                Próxima página <Icon name="arrowRight" size={18} />
               </>
             )}
           </button>

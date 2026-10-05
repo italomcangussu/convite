@@ -26,3 +26,9 @@ Regras de segurança para o Safari/iOS (não quebrar): sem 3D/backface no celula
 A intenção final do convite é a família digitar o nome e confirmar. Por isso o RSVP não é uma folha: a última página do livro ("Até as estrelas") termina com "Falta só um passo" e o botão de próxima página vira "Confirmar presença" (com anel de brilho), abrindo o modal. O capítulo continua contado como "07" para a conta fechar.
 
 Regras para o iPhone: o modal acompanha `visualViewport` (o iOS não redimensiona o layout com o teclado, só a área visível) e não é ancorado embaixo; inputs com 16px (sem zoom), `enterkeyhint="send"`, alvos de toque de 44px ou mais, `inert` no livro enquanto está aberto, foco devolvido ao botão ao fechar (o Safari não foca botões ao toque). Telefone deitado mostra um pedido para girar em vez de cortar o livro. `theme-color` igual ao céu do livro para a barra do Safari não destoar.
+
+## Painel e links
+
+Princípio do painel: quem abre sabe o que fazer em cinco segundos. A primeira tela responde "como está o convite e o que falta"; as seções seguem a ordem do livro (Capa, Textos, Data e local, Presentes, Música) e depois a lista de confirmações; cada campo diz onde aparece ("Página 3", "Capa"). Alterações não salvas ficam sempre visíveis numa barra fixa. Ações de risco (remover) são vermelhas e perguntam o nome da família.
+
+Links e ícones: nenhum "↗", seta ou emoji em texto (o iOS desenha esses caracteres como emoji colorido). Tudo vem de `components/ui/Icon.tsx` (traço de 1,8, `currentColor`), e `tests/icons.test.ts` falha se um componente voltar a usar esses caracteres. No livro, Google Maps e Waze são botões de contorno com pino/rota e o ícone de link externo, com 44px de altura; no painel, links externos são botões com ícone e `target="_blank"`.

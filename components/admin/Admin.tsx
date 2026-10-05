@@ -1,6 +1,13 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
+import Icon from "@/components/ui/Icon";
 import { supabase } from "@/lib/supabase";
 import { defaults, type Content } from "@/lib/content";
 import {
@@ -8,33 +15,62 @@ import {
   rsvpWhatsAppText,
   whatsAppLink,
 } from "@/lib/whatsapp";
-type RSVP = {
-  id: string;
-  family_name: string;
-  created_at: string;
-  status: string;
-};
-const sections = [
-  "Visão geral",
-  "Conteúdo",
-  "Data e local",
-  "Lista de presentes",
-  "Música",
-  "Confirmações",
-  "Configurações",
-];
+import { CoverPanel, EventPanel, TextsPanel } from "./ContentPanels";
+import GiftsPanel from "./GiftsPanel";
+import MusicPanel from "./MusicPanel";
+import Overview from "./Overview";
+import RsvpPanel, { type Rsvp } from "./RsvpPanel";
+import { SAVEABLE, TABS, type TabKey } from "./tabs";
+
+type Tone = "success" | "error" | "info";
+type Flash = { text: string; tone: Tone } | null;
+
+const hhmm = (d: Date) =>
+  d.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Fortaleza",
+  });
+
 export default function Admin() {
   const [authorized, setAuthorized] = useState(false),
     [checking, setChecking] = useState(true),
     [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
+    [showPassword, setShowPassword] = useState(false),
     [content, setContent] = useState<Content>(defaults),
-    [tab, setTab] = useState(0),
-    [message, setMessage] = useState(""),
+    [saved, setSaved] = useState(JSON.stringify(defaults)),
+    [savedAt, setSavedAt] = useState<Date | null>(null),
+    [tab, setTab] = useState<TabKey>("overview"),
+    [flash, setFlash] = useState<Flash>(null),
     [busy, setBusy] = useState(false),
-    [rsvps, setRsvps] = useState<RSVP[]>([]),
+    [rsvps, setRsvps] = useState<Rsvp[]>([]),
     [search, setSearch] = useState(""),
     [sort, setSort] = useState("newest");
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const notify = useCallback((text: string, tone: Tone = "info") => {
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    setFlash(text ? { text, tone } : null);
+    // Good news fades by itself; problems stay until dismissed or replaced.
+    if (text && tone !== "error")
+      flashTimer.current = setTimeout(() => setFlash(null), 5000);
+  }, []);
+
+  const dirty = authorized && JSON.stringify(content) !== saved;
+  const update = (patch: Partial<Content>) =>
+    setContent((current) => ({ ...current, ...patch }));
+
+  // The section lives in the address (#confirmacoes-style), so the back button
+  // returns to the previous section and a section can be bookmarked.
+  function selectTab(key: TabKey) {
+    if (key === tab) return;
+    setTab(key);
+    setFlash(null);
+    window.history.pushState(null, "", `#${key}`);
+    window.scrollTo({ top: 0 });
+  }
+
   const load = useCallback(async () => {
     if (!supabase) {
       setChecking(false);
@@ -52,7 +88,7 @@ export default function Admin() {
     if (!allowed) {
       setAuthorized(false);
       setChecking(false);
-      setMessage("Este usuário não tem acesso à administração.");
+      notify("Este usuário não tem acesso à administração.", "error");
       return;
     }
     const [settings, confirmations] = await Promise.all([
@@ -63,26 +99,34 @@ export default function Admin() {
         .order("created_at", { ascending: false }),
     ]);
     if (settings.error || confirmations.error) {
-      setMessage(
+      notify(
         "Não foi possível carregar os dados. Verifique a configuração do banco.",
+        "error",
       );
       setAuthorized(false);
     } else {
       const loaded = { ...defaults, ...settings.data.content } as Content;
       const loadedStartAt = Number(loaded.audioStartAt);
       const loadedVolume = Number(loaded.volume);
-      setContent({
+      const normalized: Content = {
         ...loaded,
-        audioStartAt: Number.isFinite(loadedStartAt) ? Math.max(0, loadedStartAt) : 0,
+        audioStartAt: Number.isFinite(loadedStartAt)
+          ? Math.max(0, loadedStartAt)
+          : 0,
         volume: Number.isFinite(loadedVolume)
           ? Math.min(1, Math.max(0, loadedVolume))
           : defaults.volume,
-      });
+      };
+      setContent(normalized);
+      setSaved(JSON.stringify(normalized));
       setRsvps(confirmations.data);
       setAuthorized(true);
+      const fromHash = TABS.find((t) => `#${t.key}` === window.location.hash);
+      if (fromHash) setTab(fromHash.key);
     }
     setChecking(false);
-  }, []);
+  }, [notify]);
+
   useEffect(() => {
     void load();
     const subscription = supabase?.auth.onAuthStateChange(() => {
@@ -90,58 +134,73 @@ export default function Admin() {
     });
     return () => subscription?.data.subscription.unsubscribe();
   }, [load]);
+
+  useEffect(() => {
+    function fromAddress() {
+      const found = TABS.find((t) => `#${t.key}` === window.location.hash);
+      setTab(found ? found.key : "overview");
+    }
+    window.addEventListener("popstate", fromAddress);
+    window.addEventListener("hashchange", fromAddress);
+    return () => {
+      window.removeEventListener("popstate", fromAddress);
+      window.removeEventListener("hashchange", fromAddress);
+    };
+  }, []);
+
+  // Leaving with unsaved edits is the easiest way to lose work.
+  useEffect(() => {
+    if (!dirty) return;
+    const guard = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, [dirty]);
+
   async function login(e: React.FormEvent) {
     e.preventDefault();
     if (!supabase || busy) return;
     setBusy(true);
-    setMessage("");
+    notify("");
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    if (error) setMessage("E-mail ou senha inválidos.");
+    if (error) notify("E-mail ou senha inválidos.", "error");
     else await load();
     setBusy(false);
   }
+
   async function save(e?: React.FormEvent) {
     e?.preventDefault();
     if (!supabase || busy) return;
     setBusy(true);
+    const snapshot = JSON.stringify(content);
     const { error } = await supabase
       .from("site_settings")
       .update({ content })
       .eq("id", 1);
-    setMessage(
-      error
-        ? "Não foi possível salvar. Tente novamente."
-        : "Alterações salvas.",
-    );
+    if (error) notify("Não foi possível salvar. Tente novamente.", "error");
+    else {
+      setSaved(snapshot);
+      setSavedAt(new Date());
+      notify("Alterações salvas.", "success");
+    }
     setBusy(false);
   }
-  function field(
-    key: keyof Content,
-    label: string,
-    multiline = false,
-    type = "text",
-  ) {
-    return (
-      <label key={key}>
-        {label}
-        {multiline ? (
-          <textarea
-            value={String(content[key])}
-            onChange={(e) => setContent({ ...content, [key]: e.target.value })}
-          />
-        ) : (
-          <input
-            type={type}
-            value={String(content[key])}
-            onChange={(e) => setContent({ ...content, [key]: e.target.value })}
-          />
-        )}
-      </label>
-    );
-  }
+
+  // Ctrl/Cmd + S saves while there is something to save.
+  const saveShortcut = useEffectEvent((e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && dirty) {
+      e.preventDefault();
+      void save();
+    }
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => saveShortcut(e);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   async function upload(file: File | undefined) {
     if (!supabase || !file || busy) return;
     if (
@@ -154,7 +213,7 @@ export default function Admin() {
         "audio/x-wav",
       ].includes(file.type)
     ) {
-      setMessage("Use MP3, M4A, OGG ou WAV, até 20 MB.");
+      notify("Use MP3, M4A, OGG ou WAV, até 20 MB.", "error");
       return;
     }
     setBusy(true);
@@ -166,7 +225,7 @@ export default function Admin() {
         cacheControl: "31536000",
       });
     if (error) {
-      setMessage("Não foi possível enviar a música.");
+      notify("Não foi possível enviar a música.", "error");
       setBusy(false);
       return;
     }
@@ -182,15 +241,17 @@ export default function Admin() {
       .eq("id", 1);
     if (saveError) {
       await supabase.storage.from("soundtracks").remove([path]);
-      setMessage("Não foi possível ativar a música.");
+      notify("Não foi possível ativar a música.", "error");
     } else {
       if (content.audioPath)
         await supabase.storage.from("soundtracks").remove([content.audioPath]);
       setContent(next);
-      setMessage("Música atualizada.");
+      setSaved(JSON.stringify(next));
+      notify("Música atualizada.", "success");
     }
     setBusy(false);
   }
+
   async function removeAudio() {
     if (!supabase || busy) return;
     setBusy(true);
@@ -199,32 +260,35 @@ export default function Admin() {
       .from("site_settings")
       .update({ content: next })
       .eq("id", 1);
-    if (error) setMessage("Não foi possível remover a música.");
+    if (error) notify("Não foi possível remover a música.", "error");
     else {
       if (content.audioPath)
         await supabase.storage.from("soundtracks").remove([content.audioPath]);
       setContent(next);
-      setMessage("Música removida.");
+      setSaved(JSON.stringify(next));
+      notify("Música removida.", "success");
     }
     setBusy(false);
   }
-  async function removeRsvp(id: string) {
-    if (!supabase || busy || !window.confirm("Remover esta confirmação?"))
+
+  async function removeRsvp(id: string, name: string) {
+    if (!supabase || busy || !window.confirm(`Remover a confirmação de ${name}?`))
       return;
     setBusy(true);
     const { error } = await supabase.from("rsvps").delete().eq("id", id);
-    if (error) setMessage("Não foi possível remover.");
+    if (error) notify("Não foi possível remover.", "error");
     else {
-      setRsvps(rsvps.filter((r) => r.id !== id));
-      setMessage("Confirmação removida.");
+      setRsvps((current) => current.filter((r) => r.id !== id));
+      notify("Confirmação removida.", "success");
     }
     setBusy(false);
   }
+
   const filtered = rsvps
     .filter((r) =>
       r.family_name
         .toLocaleLowerCase("pt-BR")
-        .includes(search.toLocaleLowerCase("pt-BR")),
+        .includes(search.trim().toLocaleLowerCase("pt-BR")),
     )
     .sort((a, b) =>
       sort === "name"
@@ -233,6 +297,7 @@ export default function Admin() {
           ? a.created_at.localeCompare(b.created_at)
           : b.created_at.localeCompare(a.created_at),
     );
+
   function csv() {
     const cell = (s: string) =>
       `"${(/^[=+@-]/.test(s) ? "'" : "") + s.replaceAll('"', '""')}"`;
@@ -259,436 +324,259 @@ export default function Admin() {
     a.click();
     URL.revokeObjectURL(url);
   }
-  // Sends the list the admin is looking at (same filter and order as the CSV).
-  async function whatsapp() {
-    if (!filtered.length) {
-      setMessage("Nenhuma confirmação para enviar.");
-      return;
-    }
-    const text = rsvpWhatsAppText({
+
+  const listText = () =>
+    rsvpWhatsAppText({
       title: content.name,
       families: filtered.map((r) => r.family_name),
       updatedAt: new Date(),
     });
+
+  // Sends the list the admin is looking at (same filter and order as the CSV).
+  async function whatsapp() {
+    if (!filtered.length) {
+      notify("Nenhuma confirmação para enviar.", "error");
+      return;
+    }
+    const text = listText();
     if (fitsWhatsAppLink(text)) {
       window.open(whatsAppLink(text), "_blank", "noopener,noreferrer");
-      setMessage("");
       return;
     }
     // Too long for a link: hand the text over through the clipboard instead.
     try {
       await navigator.clipboard.writeText(text);
-      setMessage(
+      notify(
         "A lista é grande demais para o link do WhatsApp. Copiei o texto: abra a conversa e cole.",
+        "info",
       );
     } catch {
-      setMessage(
+      notify(
         "A lista é grande demais para o link do WhatsApp e não foi possível copiar. Use Exportar CSV.",
+        "error",
       );
     }
   }
+
+  async function copy(text: string, done: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      notify(done, "success");
+    } catch {
+      notify("Não foi possível copiar. Selecione o texto e copie manualmente.", "error");
+    }
+  }
+
   if (checking)
     return (
       <main className="admin-shell">
-        <p>Carregando…</p>
+        <p className="admin-loading">Carregando…</p>
       </main>
     );
+
   if (!authorized)
     return (
-      <main className="admin-shell">
+      <main className="admin-shell admin-login-shell">
         <div className="admin-login">
           <p className="eyebrow">O livro de Vicente</p>
-          <h2>Administração</h2>
+          <h1>Administração</h1>
           {!supabase ? (
-            <p>
+            <p className="admin-muted">
               Configure o Supabase para habilitar o acesso seguro ao painel.
               Consulte as instruções no README do projeto.
             </p>
           ) : (
             <form className="admin-form" onSubmit={login}>
-              <label>
-                E-mail
+              <div className="admin-field">
+                <label htmlFor="admin-email">E-mail</label>
                 <input
+                  id="admin-email"
                   type="email"
                   autoComplete="username"
+                  autoCapitalize="none"
+                  inputMode="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-              </label>
-              <label>
-                Senha
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </label>
-              <button disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="admin-password">Senha</label>
+                <div className="admin-password">
+                  <input
+                    id="admin-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="admin-btn ghost icon-only"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    aria-pressed={showPassword}
+                  >
+                    <Icon name={showPassword ? "eyeOff" : "eye"} size={18} />
+                  </button>
+                </div>
+              </div>
+              <button className="admin-btn primary" disabled={busy}>
+                {busy ? "Entrando…" : "Entrar"}
+              </button>
             </form>
           )}
-          <p role="status">{message}</p>
-          <Link href="/">Voltar ao convite</Link>
+          <p
+            className={`admin-note ${flash?.tone ?? ""}`}
+            role="status"
+          >
+            {flash?.text}
+          </p>
+          <Link className="admin-link" href="/">
+            <Icon name="arrowLeft" size={14} />
+            Voltar ao convite
+          </Link>
         </div>
       </main>
     );
+
+  const siteUrl = `${window.location.origin}/`;
+  const now = new Date();
+
   return (
     <main className="admin-shell">
-      <header className="admin-header">
-        <div>
+      <header className="admin-top">
+        <div className="admin-brand">
           <p className="eyebrow">Administração</p>
           <h1>O livro de {content.name}</h1>
         </div>
-        <div className="admin-toolbar">
-          <a href="/" target="_blank" rel="noreferrer">
-            Visualizar convite ↗
+        <div className="admin-top-actions">
+          <a className="admin-btn secondary small" href="/" target="_blank" rel="noreferrer">
+            <Icon name="external" size={15} />
+            Ver convite
           </a>
           <button
-            className="secondary"
+            type="button"
+            className="admin-btn ghost small"
             onClick={async () => {
               await supabase?.auth.signOut();
               setAuthorized(false);
               setPassword("");
             }}
           >
+            <Icon name="logout" size={15} />
             Sair
           </button>
         </div>
       </header>
-      <nav className="admin-nav">
-        {sections.map((s, i) => (
+
+      <nav className="admin-nav" aria-label="Seções do painel">
+        {TABS.map((t) => (
           <button
-            key={s}
-            onClick={() => {
-              setTab(i);
-              setMessage("");
+            key={t.key}
+            type="button"
+            className="admin-tab"
+            aria-current={tab === t.key ? "page" : undefined}
+            onClick={(e) => {
+              selectTab(t.key);
+              // Keeps the chosen section in view on the scrolling tab bar.
+              e.currentTarget.scrollIntoView({
+                inline: "center",
+                block: "nearest",
+                behavior: "smooth",
+              });
             }}
-            aria-pressed={tab === i}
           >
-            {s}
+            <Icon name={t.icon} size={17} />
+            {t.label}
+            {t.key === "rsvps" && rsvps.length > 0 && (
+              <span className="admin-badge">{rsvps.length}</span>
+            )}
           </button>
         ))}
       </nav>
-      <p className="admin-status" role="status">
-        {message}
-      </p>
-      {tab === 0 && (
-        <>
-          <h2>Uma história em preparação.</h2>
-          <p className="admin-summary">{rsvps.length} famílias confirmadas</p>
-          <p>
-            Edite os capítulos, defina o encontro e escolha a trilha sonora.
-          </p>
-          {!content.date && (
-            <p className="admin-status">
-              Data, horário e endereço ainda precisam ser definidos.
-            </p>
-          )}
-        </>
-      )}
-      {[1, 2, 4, 6].includes(tab) && (
-        <form className="admin-form" onSubmit={save}>
-          {tab === 1 && (
-            <>
-              {field("intro", "Página 1 — título")}
-              {field("narrative", "Página 1 — narrativa", true)}
-              {field("quote", "Página 2 — frase curta ou citação", true)}
-              {field(
-                "quoteAuthor",
-                "Autoria (deixe vazio para texto da família)",
-              )}
-              {field("closing", "Página 6 — encerramento", true)}
-              {field(
-                "rsvpText",
-                "Confirmação de presença (janela depois da página 6) — convite",
-                true,
-              )}
-            </>
-          )}
-          {tab === 2 && (
-            <>
-              {field("date", "Data — ainda não definida", false, "date")}
-              {field("time", "Horário — ainda não definido", false, "time")}
-              {field("dateNote", "Texto complementar")}
-              <label>
-                Formato da data
-                <select
-                  value={content.dateFormat}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      dateFormat: e.target.value as Content["dateFormat"],
-                    })
-                  }
-                >
-                  <option value="long">Por extenso</option>
-                  <option value="short">Dia e mês</option>
-                </select>
-              </label>
-              {field("venue", "Nome do local")}
-              {field("address", "Endereço — ainda não definido", true)}
-            </>
-          )}
-          {tab === 6 && (
-            <>
-              {field("name", "Nome da criança")}
-              {field("age", "Idade")}
-              {field("title", "Tema / título")}
-              {field("subtitle", "Subtítulo da capa")}
-            </>
-          )}
-          {tab === 4 && (
-            <>
-              <p>
-                Música ativa: {content.audioName || "Nenhum arquivo enviado"}
-              </p>
-              <label>
-                Enviar / substituir música
-                <input
-                  type="file"
-                  accept="audio/mpeg,audio/mp4,audio/ogg,audio/wav"
-                  disabled={busy}
-                  onChange={(e) => void upload(e.target.files?.[0])}
-                />
-              </label>
-              {content.audioPath && (
-                <>
-                  <audio
-                    className="admin-audio"
-                    controls
-                    src={
-                      supabase?.storage
-                        .from("soundtracks")
-                        .getPublicUrl(content.audioPath).data.publicUrl
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="secondary"
-                    disabled={busy}
-                    onClick={removeAudio}
-                  >
-                    Remover música
-                  </button>
-                </>
-              )}
-              <label>
-                Cortar silêncio inicial — {content.audioStartAt.toFixed(2)} s
-                <input
-                  type="number"
-                  min="0"
-                  max="60"
-                  step="0.05"
-                  value={content.audioStartAt}
-                  disabled={busy || !content.audioPath}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      audioStartAt: Math.min(
-                        60,
-                        Math.max(0, Number(e.target.value) || 0),
-                      ),
-                    })
-                  }
-                />
-              </label>
-              <label>
-                Volume padrão — {Math.round(content.volume * 100)}%
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step=".05"
-                  value={content.volume}
-                  onChange={(e) =>
-                    setContent({ ...content, volume: Number(e.target.value) })
-                  }
-                />
-              </label>
-            </>
-          )}
-          <button disabled={busy}>
-            {busy ? "Salvando…" : "Salvar alterações"}
-          </button>
-        </form>
-      )}
-      {tab === 3 && (
-        <div className="admin-form">
-          {content.gifts.map((g, i) => (
-            <div className="admin-gift" key={g.id}>
-              <label>
-                Sugestão
-                <input
-                  value={g.name}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      gifts: content.gifts.map((x) =>
-                        x.id === g.id ? { ...x, name: e.target.value } : x,
-                      ),
-                    })
-                  }
-                />
-              </label>
-              <label>
-                Descrição
-                <textarea
-                  value={g.detail}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      gifts: content.gifts.map((x) =>
-                        x.id === g.id ? { ...x, detail: e.target.value } : x,
-                      ),
-                    })
-                  }
-                />
-              </label>
-              <label className="checkbox">
-                <input
-                  type="checkbox"
-                  checked={g.active}
-                  onChange={(e) =>
-                    setContent({
-                      ...content,
-                      gifts: content.gifts.map((x) =>
-                        x.id === g.id ? { ...x, active: e.target.checked } : x,
-                      ),
-                    })
-                  }
-                />
-                Visível no convite
-              </label>
-              <div className="admin-gift-actions">
-                <button
-                  disabled={i === 0}
-                  onClick={() => {
-                    const gifts = [...content.gifts];
-                    [gifts[i - 1], gifts[i]] = [gifts[i], gifts[i - 1]];
-                    setContent({ ...content, gifts });
-                  }}
-                >
-                  Subir
-                </button>
-                <button
-                  disabled={i === content.gifts.length - 1}
-                  onClick={() => {
-                    const gifts = [...content.gifts];
-                    [gifts[i + 1], gifts[i]] = [gifts[i], gifts[i + 1]];
-                    setContent({ ...content, gifts });
-                  }}
-                >
-                  Descer
-                </button>
-                <button
-                  className="secondary"
-                  onClick={() =>
-                    setContent({
-                      ...content,
-                      gifts: content.gifts.filter((x) => x.id !== g.id),
-                    })
-                  }
-                >
-                  Excluir
-                </button>
-              </div>
-            </div>
-          ))}
+
+      {flash && (
+        <div className={`admin-toast ${flash.tone}`} role="status">
+          <Icon name={flash.tone === "error" ? "alert" : "check"} size={18} />
+          <span>{flash.text}</span>
           <button
-            className="secondary"
-            onClick={() =>
-              setContent({
-                ...content,
-                gifts: [
-                  ...content.gifts,
-                  {
-                    id: crypto.randomUUID(),
-                    name: "Nova sugestão",
-                    detail: "",
-                    active: true,
-                  },
-                ],
-              })
-            }
+            type="button"
+            className="admin-toast-close"
+            onClick={() => setFlash(null)}
+            aria-label="Fechar aviso"
           >
-            Adicionar sugestão
-          </button>
-          <button disabled={busy} onClick={() => void save()}>
-            Salvar alterações
+            <Icon name="close" size={16} />
           </button>
         </div>
       )}
-      {tab === 5 && (
-        <>
-          <div className="admin-toolbar">
-            <input
-              className="admin-search"
-              aria-label="Pesquisar família"
-              placeholder="Pesquisar família"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+
+      {tab === "overview" && (
+        <Overview
+          content={content}
+          rsvps={rsvps}
+          siteUrl={siteUrl}
+          now={now}
+          go={selectTab}
+          copyLink={() => void copy(siteUrl, "Link copiado.")}
+        />
+      )}
+
+      {SAVEABLE.includes(tab) && (
+        <form className="admin-form admin-stack" onSubmit={save}>
+          {tab === "cover" && <CoverPanel content={content} update={update} />}
+          {tab === "texts" && <TextsPanel content={content} update={update} />}
+          {tab === "event" && <EventPanel content={content} update={update} />}
+          {tab === "gifts" && <GiftsPanel content={content} update={update} />}
+          {tab === "music" && (
+            <MusicPanel
+              content={content}
+              update={update}
+              busy={busy}
+              upload={(file) => void upload(file)}
+              remove={() => void removeAudio()}
             />
-            <select
-              aria-label="Ordenar confirmações"
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-            >
-              <option value="newest">Mais recentes</option>
-              <option value="oldest">Mais antigas</option>
-              <option value="name">Nome da família</option>
-            </select>
-            <button onClick={csv}>Exportar CSV</button>
-            <button
-              type="button"
-              className="whatsapp"
-              onClick={() => void whatsapp()}
-              disabled={!filtered.length}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.3-.15-1.263-.465-2.403-1.485-.888-.795-1.484-1.77-1.66-2.07-.174-.3-.019-.465.13-.615.136-.135.301-.345.451-.523.146-.181.194-.301.297-.496.1-.21.049-.375-.025-.524-.075-.15-.672-1.62-.922-2.206-.24-.584-.487-.51-.672-.51-.172-.015-.371-.015-.571-.015-.2 0-.523.074-.797.359-.273.3-1.045 1.02-1.045 2.475s1.07 2.865 1.219 3.075c.149.18 2.095 3.195 5.076 4.483.714.306 1.272.489 1.705.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-              </svg>
-              Exportar por WhatsApp
-            </button>
-            <button className="secondary" onClick={() => void load()}>
-              Atualizar
+          )}
+          <div className={`admin-savebar ${dirty ? "dirty" : ""}`}>
+            <p className="admin-savestate" role="status">
+              {dirty ? (
+                <>
+                  <span className="admin-dot" aria-hidden="true" />
+                  Alterações não salvas
+                </>
+              ) : (
+                <>
+                  <Icon name="check" size={16} />
+                  Tudo salvo{savedAt ? ` às ${hhmm(savedAt)}` : ""}
+                </>
+              )}
+            </p>
+            <button className="admin-btn primary" disabled={busy || !dirty}>
+              <Icon name="save" size={16} />
+              {busy ? "Salvando…" : "Salvar alterações"}
             </button>
           </div>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Família</th>
-                <th>Data e horário</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.family_name}</td>
-                  <td>
-                    {new Date(r.created_at).toLocaleString("pt-BR", {
-                      timeZone: "America/Fortaleza",
-                    })}
-                  </td>
-                  <td>Confirmada</td>
-                  <td>
-                    <button
-                      className="secondary"
-                      disabled={busy}
-                      onClick={() => void removeRsvp(r.id)}
-                    >
-                      Remover
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!filtered.length && <p>Nenhuma confirmação encontrada.</p>}
-        </>
+        </form>
+      )}
+
+      {tab === "rsvps" && (
+        <RsvpPanel
+          total={rsvps.length}
+          rows={filtered}
+          search={search}
+          onSearch={setSearch}
+          sort={sort}
+          onSort={setSort}
+          busy={busy}
+          now={now}
+          onRemove={(id, name) => void removeRsvp(id, name)}
+          onCsv={csv}
+          onWhatsapp={() => void whatsapp()}
+          onCopyList={() => void copy(listText(), "Lista copiada.")}
+          onRefresh={() => void load()}
+          onCopyLink={() => void copy(siteUrl, "Link copiado.")}
+        />
       )}
     </main>
   );

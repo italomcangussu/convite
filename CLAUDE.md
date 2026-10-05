@@ -8,4 +8,5 @@
 - O livro só abre quando `bookLoad()` (`lib/loading.ts`) diz `ready`: texto + arte + fontes + trilha. Falha ao buscar o texto é estado de erro, nunca conteúdo de rascunho.
 - Testes: `npm test` (unit), `npm run test:e2e` (Chromium + WebKit). `tests/audio.spec.ts` só roda com `NEXT_PUBLIC_SUPABASE_URL` definido (ver o topo do arquivo).
 - O RSVP é o sétimo capítulo, mas abre como diálogo (`RsvpDialog`) pelo "próximo" da última página (`LAST_PAGE` em `Book.tsx`); segue o `visualViewport` por causa do teclado do iPhone. Foco volta ao botão ao fechar.
+- Ícones: só `components/ui/Icon.tsx` (SVG). Setas e emoji em texto são proibidos (o iOS os desenha como emoji; `tests/icons.test.ts` falha). O painel tem CSS próprio em `app/admin/admin.css`.
 - Não validado em iPhone real: reprodução de áudio e a virada 2D.

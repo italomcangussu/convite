@@ -649,148 +649,6 @@ cite {
     opacity: 0.8;
   }
 }
-.admin-shell {
-  min-height: 100svh;
-  max-width: 1050px;
-  margin: auto;
-  padding: 40px 24px;
-}
-.admin-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: center;
-  border-bottom: 1px solid #d3b77d33;
-  padding-bottom: 24px;
-  margin-bottom: 32px;
-}
-.admin-header h1 {
-  font-size: 30px;
-  letter-spacing: 0;
-}
-.admin-header a {
-  font-size: 12px;
-}
-.admin-shell button {
-  background: #d3b77d;
-  color: #102036;
-  border: 0;
-  border-radius: 3px;
-  padding: 12px 18px;
-}
-.admin-shell .secondary {
-  background: transparent;
-  border: 1px solid #d3b77d55;
-  color: var(--cream);
-}
-.admin-login {
-  max-width: 400px;
-  margin: 10vh auto;
-}
-.admin-login h2 {
-  margin-bottom: 25px;
-}
-.admin-login p {
-  font-size: 13px;
-  line-height: 1.7;
-  color: #b9c2c8;
-  margin: 20px 0;
-}
-.admin-form {
-  display: grid;
-  gap: 19px;
-}
-.admin-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  font-size: 12px;
-  color: #c8d0d4;
-}
-.admin-form input,
-.admin-form textarea,
-.admin-form select,
-.admin-search {
-  background: #162638;
-  border: 1px solid #71809055;
-  color: var(--cream);
-  padding: 13px;
-  font-size: 16px;
-  border-radius: 3px;
-  width: 100%;
-}
-.admin-form textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-.admin-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 30px;
-}
-.admin-nav button {
-  background: transparent;
-  border: 1px solid #71809055;
-  color: var(--cream);
-}
-.admin-nav button[aria-pressed="true"] {
-  background: #d3b77d;
-  color: #102036;
-}
-.admin-status {
-  min-height: 28px;
-  font-size: 13px;
-  color: var(--gold);
-  margin: 15px 0;
-}
-.admin-gift {
-  border: 1px solid #71809055;
-  padding: 18px;
-  display: grid;
-  gap: 14px;
-  margin: 16px 0;
-}
-.admin-gift-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.admin-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  margin: 22px 0;
-}
-.admin-table td,
-.admin-table th {
-  text-align: left;
-  padding: 14px 8px;
-  border-bottom: 1px solid #71809055;
-}
-.admin-summary {
-  font:
-    28px var(--font-poppins),
-    sans-serif;
-  margin: 24px 0;
-}
-.admin-audio {
-  max-width: 100%;
-  margin: 20px 0;
-}
-.admin-form .checkbox {
-  flex-direction: row;
-  align-items: center;
-}
-.checkbox input {
-  width: auto;
-}
-.admin-toolbar {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  flex-wrap: wrap;
-}
 @media (max-width: 500px) {
   .universe {
     padding: calc(16px + env(safe-area-inset-top)) 17px
@@ -929,19 +787,6 @@ cite {
     bottom: 12px;
     width: 32px;
     height: 32px;
-  }
-  .admin-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .admin-table {
-    font-size: 10px;
-  }
-  .admin-table button {
-    padding: 8px;
-  }
-  .admin-shell {
-    padding: 25px 16px;
   }
 }
 @media (max-height: 740px) {
@@ -2428,21 +2273,50 @@ body {
   }
 }
 
-/* Painel: botão de exportar a lista por WhatsApp. */
-.admin-shell button.whatsapp {
+/* Ícones SVG (nenhum "↗" em texto: o iOS o desenha como emoji azul). */
+.icon {
+  flex: none;
+  display: inline-block;
+  vertical-align: -0.2em;
+}
+/* Links do mapa: botões de contorno com ícone, no lugar de texto sublinhado. */
+.map-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.map-actions a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #25d366;
-  color: #08210f;
-  font-weight: 600;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #d3b77d55;
+  border-radius: 999px;
+  background: #ffffff0a;
+  color: var(--cream);
+  font: 500 12px/1 var(--font-poppins), sans-serif;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
-.admin-shell button.whatsapp svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
+.map-actions a > .icon:first-child {
+  color: var(--gold);
 }
-.admin-shell button.whatsapp:disabled {
-  opacity: 0.5;
-  cursor: default;
+.map-actions .map-external {
+  margin-left: 2px;
+  opacity: 0.6;
+}
+.map-actions a:hover,
+.map-actions a:focus-visible {
+  border-color: #d3b77d99;
+  background: #d3b77d1f;
+}
+.map-actions a:active {
+  transform: scale(0.97);
 }
