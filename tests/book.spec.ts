@@ -99,6 +99,39 @@ test("mantém a mesma folha montada durante a virada sem piscar o conteúdo", as
   await expect(leaf.locator("blockquote")).toBeVisible();
 });
 
+test("WebKit móvel usa virada 2D sem esconder o conteúdo da folha", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "webkit", "Regressão específica do Safari/WebKit.");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Abrir o livro" }).click();
+  const leaf = page.locator(".active-page");
+  await expect(leaf.locator("h2")).toBeVisible();
+
+  await page.getByRole("button", { name: /Próxima página/ }).click();
+
+  await expect
+    .poll(() =>
+      leaf.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          animationName: style.animationName,
+          backfaceVisibility: style.backfaceVisibility,
+        };
+      }),
+    )
+    .toEqual({
+      animationName: "turnNextMobile",
+      backfaceVisibility: "visible",
+    });
+
+  await expect(page.locator(".under-page blockquote")).toBeVisible();
+  await page.waitForTimeout(650);
+  await expect(leaf.locator("blockquote")).toBeVisible();
+});
+
 test("WebKit usa o mesmo toque para iniciar a música e abrir o livro", async ({
   page,
   browserName,
