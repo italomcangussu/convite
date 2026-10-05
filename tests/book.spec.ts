@@ -77,6 +77,28 @@ test("admin permanece protegido", async ({ page }) => {
 });
 
 
+test("mantém a mesma folha montada durante a virada sem piscar o conteúdo", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Abrir o livro" }).click();
+  const leaf = page.locator(".active-page");
+  await expect(leaf.locator("h2")).toContainText("Há um ano");
+
+  // Marca o nó real. Se React remontar a folha no fim da animação,
+  // este atributo desaparece e a regressão visual volta a ser detectada.
+  await leaf.evaluate((element) =>
+    element.setAttribute("data-page-leaf-stable", "true"),
+  );
+
+  await page.getByRole("button", { name: /Próxima página/ }).click();
+  await expect(page.locator(".under-page blockquote")).toBeVisible();
+  await page.waitForTimeout(720);
+
+  await expect(leaf).toHaveAttribute("data-page-leaf-stable", "true");
+  await expect(leaf.locator("blockquote")).toBeVisible();
+});
+
 test("WebKit usa o mesmo toque para iniciar a música e abrir o livro", async ({
   page,
   browserName,
