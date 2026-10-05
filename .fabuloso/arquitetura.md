@@ -17,6 +17,7 @@ Convite mobile em forma de livro noturno (Next.js App Router 16, React 19, TS, C
 ## Fronteiras
 - Dados: `lib/supabase.ts` (chave publishable, `null` sem env). `site_settings.content` (JSON mesclado com `defaults`), `rsvps` (INSERT público, UUID idempotente), `admins`, bucket `soundtracks` público. Migrations em `supabase/migrations`. Sem env → modo local, sem áudio.
 - Áudio: um único `<audio>` fora das folhas (`useBookAudio`); trilha de `content.audioPath` (Storage público) é pré-baixada como Blob e só toca por gesto: `play()` síncrono no clique de "Abrir o livro", sem esperar a promessa.
+- RSVP: sétimo capítulo, aberto como diálogo (`components/book/RsvpDialog.tsx`) pelo "próximo" da última página do livro; o livro tem 6 folhas (`LAST_PAGE`). Segue `visualViewport` (teclado do iPhone).
 - Carregamento: `bookLoad()` (`lib/loading.ts`) decide quando o livro pode abrir (texto via `useInvitationContent`, arte, fontes, trilha); falha no texto = estado de erro com retry.
 - UI: todo o estilo em `app/globals.css` (arquivo único, ~1,5k linhas; blocos adicionados por camadas, o último vence). Folha ativa (`.active-page`) + folha de baixo (`.under-page`) + `settlingPage` evitam piscar no Safari.
 - Rotas: `/` (livro), `/admin` (protegido por `admins`).

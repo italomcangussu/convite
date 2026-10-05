@@ -123,4 +123,43 @@ test.describe("com Supabase", () => {
     await expect(page.locator(".active-page h2")).toBeVisible();
     await expect(page.locator(".audio-control")).toHaveCount(0);
   });
+
+  test("confirmar pelo modal mostra o agradecimento e lembra a confirmação", async ({
+    page,
+  }) => {
+    await mockSupabase(page);
+    let inserted: unknown;
+    await page.route(`${supabaseUrl}/rest/v1/rsvps*`, async (route) => {
+      inserted = route.request().postDataJSON();
+      await route.fulfill({ status: 201, headers: cors, body: "" });
+    });
+    await page.goto("/");
+    await expect(page.locator(".open-book")).toHaveAttribute("data-state", "ready", {
+      timeout: 15_000,
+    });
+    await page.locator(".open-book").click();
+    const leaf = page.locator(".active-page");
+    await expect(leaf.locator("h2")).toBeVisible();
+    for (let n = 2; n <= 6; n++) {
+      await page.locator(".book").focus();
+      await page.keyboard.press("ArrowRight");
+      await expect(leaf.locator(".chapter-progress")).toContainText(`PÁGINA ${n}`);
+    }
+    await page.locator(".page-next").click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Nome da família").fill("Família Teste");
+    await dialog.getByRole("button", { name: "Confirmar presença" }).click();
+
+    await expect(dialog.getByRole("heading")).toContainText("Presença confirmada");
+    await expect(dialog).toContainText("Família Teste");
+    expect(inserted).toMatchObject({ family_name: "Família Teste" });
+
+    // Ao voltar ao modal depois, ele já mostra a presença confirmada.
+    await dialog.getByRole("button", { name: "Voltar ao livro" }).click();
+    await expect(dialog).toHaveCount(0);
+    await page.locator(".page-next").click();
+    await expect(page.getByRole("dialog").getByRole("heading")).toContainText(
+      "Presença confirmada",
+    );
+  });
 });

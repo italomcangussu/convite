@@ -1,6 +1,6 @@
 # O livro de Vicente Mateus
 
-Convite mobile em formato de livro noturno, inspirado apenas no ritmo narrativo das referências. Ilustrações originais de linguagem manual, ornamentos SVG, capa física em CSS 3D, sete capítulos, navegação por swipe, bordas e teclado. Não inclui fotos ou reserva de presentes.
+Convite mobile em formato de livro noturno, inspirado apenas no ritmo narrativo das referências. Ilustrações originais de linguagem manual, ornamentos SVG, capa física em CSS 3D, seis páginas e um modal de confirmação de presença, navegação por swipe, bordas e teclado. Não inclui fotos ou reserva de presentes.
 
 ## Executar
 
@@ -56,6 +56,10 @@ Como a música toca:
 - A música pausa quando a aba/o app vai para segundo plano e retorna se estava tocando.
 
 Não há atribuição automática das frases provisórias a Saint-Exupéry. O campo de autoria fica vazio até a citação definitiva ser fornecida.
+
+## Confirmação de presença
+
+O livro tem seis páginas; o sétimo capítulo, a confirmação, abre como modal quando se aperta "Confirmar presença" (o "Próxima página" da última página), puxa a folha para frente, toca a borda direita ou usa a seta para a direita nela. A família digita o nome e confirma; depois aparece o agradecimento e, ao reabrir, o modal já mostra a presença confirmada (o UUID/nome ficam em `localStorage`). O modal segue a área visível do iPhone (`visualViewport`), então o cartão fica acima do teclado; Esc, o X e o toque fora fecham.
 
 ## Quando o livro abre
 
@@ -116,7 +120,8 @@ Metadados e imagem de compartilhamento estão em `app/layout.tsx` e `public/og.s
 
 ## Áreas principais
 
-- `components/book/Book.tsx`: estado, gestos, capítulos e RSVP.
+- `components/book/Book.tsx`: estado, gestos e capítulos.
+- `components/book/RsvpDialog.tsx`: confirmação de presença (sétimo capítulo) em modal, pensada para o iPhone.
 - `components/book/useBookAudio.ts`: trilha (download em memória, play no toque, fade, pausa em segundo plano).
 - `components/book/useInvitationContent.ts`: busca do texto com tentativas e estado de erro.
 - `lib/audio.ts`, `lib/loading.ts`: helpers puros testados (download, fade, regra de abertura).
