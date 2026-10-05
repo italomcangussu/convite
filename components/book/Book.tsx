@@ -546,9 +546,24 @@ export default function Book() {
           </button>
         </>
       )}
-      <p className={`outer-dedication ${page >= 0 ? "is-hidden" : ""}`} aria-hidden={page >= 0}>
-        Para quem faz parte do nosso universo.
-      </p>
+      <footer className="reader-footer">
+        <nav
+          className={`page-navigation ${page < 0 ? "is-hidden" : ""}`}
+          aria-label="Navegação do livro"
+          aria-hidden={page < 0}
+          inert={page < 0}
+        >
+          <button type="button" className="page-previous" disabled={page <= 0 || !!turn} onClick={() => navigate(-1)}>
+            <span aria-hidden="true">←</span> Página anterior
+          </button>
+          <button type="button" className="page-next" disabled={page >= 6 || page < 0 || !!turn} onClick={() => navigate(1)}>
+            Próxima página <span aria-hidden="true">→</span>
+          </button>
+        </nav>
+        <p className={`outer-dedication ${page >= 0 ? "is-hidden" : ""}`} aria-hidden={page >= 0}>
+          Para quem faz parte do nosso universo.
+        </p>
+      </footer>
     </main>
   );
 }
