@@ -90,11 +90,13 @@ export default function Book() {
     lock.current = true;
     setTurn(1);
     void toggleAudio();
-    timer.current = setTimeout(() => {
-      setPage(0);
-      setTurn(0);
-      lock.current = false;
-    }, 900);
+    timer.current = setTimeout(finishOpening, 1200);
+  }
+  function finishOpening() {
+    if (timer.current) clearTimeout(timer.current);
+    setPage(0);
+    setTurn(0);
+    lock.current = false;
   }
   async function confirm(e: React.FormEvent) {
     e.preventDefault();
@@ -322,12 +324,12 @@ export default function Book() {
           />
         ))}
       </div>
-      {page < 0 && (
-        <div className="outer-label">UM CONVITE ESCRITO NAS ESTRELAS</div>
-      )}
+      <div className={`outer-label ${page >= 0 ? "is-hidden" : ""}`} aria-hidden={page >= 0}>
+        UM CONVITE ESCRITO NAS ESTRELAS
+      </div>
       <div className="book-stage">
         <div
-          className={`book ${page === -1 ? "closed" : "is-open"} ${turn ? "turning" : ""}`}
+          className={`book ${page === -1 ? "closed" : "is-open"} ${page === -1 && turn ? "is-opening" : ""} ${turn ? "turning" : ""}`}
           onKeyDown={(e) => {
             if ((e.target as HTMLElement).closest("input,textarea")) return;
             if (e.key === "ArrowRight") {
@@ -358,6 +360,11 @@ export default function Book() {
           }
           <article
             ref={leafRef}
+            onAnimationEnd={(e) => {
+              if (e.target === e.currentTarget && e.animationName === "turnNext" && page === -1) {
+                finishOpening();
+              }
+            }}
             className={`page active-page ${page === -1 ? "cover" : ""} ${drag ? "is-dragging" : ""} ${turn === 1 ? "turn-next" : turn === -1 ? "turn-prev" : ""}`}
             style={
               drag
@@ -497,11 +504,9 @@ export default function Book() {
           </button>
         </>
       )}
-      {page < 0 && (
-        <p className="outer-dedication">
-          Para quem faz parte do nosso universo.
-        </p>
-      )}
+      <p className={`outer-dedication ${page >= 0 ? "is-hidden" : ""}`} aria-hidden={page >= 0}>
+        Para quem faz parte do nosso universo.
+      </p>
     </main>
   );
 }

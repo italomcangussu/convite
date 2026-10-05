@@ -115,7 +115,7 @@ p {
 .book.closed {
   width: min(100%, 390px);
 }
-.book.is-open {
+.book:is(.is-open, .is-opening) {
   box-shadow: 0 25px 66px #0008;
 }
 .inside-cover {
@@ -186,8 +186,8 @@ p {
     transparent
   );
 }
-.book.is-open .active-page:not(.cover),
-.book.is-open .under-page {
+.book:is(.is-open, .is-opening) .active-page:not(.cover),
+.book:is(.is-open, .is-opening) .under-page {
   left: 50%;
   right: 0;
   width: 50%;
@@ -799,7 +799,7 @@ cite {
   .book.closed {
     width: min(100%, 390px);
   }
-  .book.is-open {
+  .book:is(.is-open, .is-opening) {
     width: 100%;
   }
   .inside-cover {
@@ -823,27 +823,27 @@ cite {
     width: 14px;
     height: 14px;
   }
-  .book.is-open .active-page:not(.cover),
-  .book.is-open .under-page {
+  .book:is(.is-open, .is-opening) .active-page:not(.cover),
+  .book:is(.is-open, .is-opening) .under-page {
     left: 25%;
     right: 0;
     width: 75%;
     border-radius: 0 8px 8px 0;
   }
-  .book.is-open .page:not(.cover) {
+  .book:is(.is-open, .is-opening) .page:not(.cover) {
     padding: 18px 16px 20px;
   }
-  .book.is-open .chapter {
+  .book:is(.is-open, .is-opening) .chapter {
     margin-bottom: 14px;
   }
-  .book.is-open .eyebrow {
+  .book:is(.is-open, .is-opening) .eyebrow {
     margin-bottom: 12px;
   }
-  .book.is-open h2 {
+  .book:is(.is-open, .is-opening) h2 {
     font-size: 23px;
     line-height: 1.16;
   }
-  .book.is-open .illustration-scene {
+  .book:is(.is-open, .is-opening) .illustration-scene {
     width: calc(100% + 18px);
     height: 185px;
     max-height: 185px;
@@ -853,20 +853,20 @@ cite {
     margin-top: 8px;
     margin-bottom: 3px;
   }
-  .book.is-open .narrative {
+  .book:is(.is-open, .is-opening) .narrative {
     font-size: 13px;
     line-height: 1.5;
   }
-  .book.is-open .small-sign {
+  .book:is(.is-open, .is-opening) .small-sign {
     margin-top: 10px;
   }
-  .book.is-open .folio {
+  .book:is(.is-open, .is-opening) .folio {
     padding-top: 7px;
   }
-  .book.is-open .chapter-title {
+  .book:is(.is-open, .is-opening) .chapter-title {
     font-size: 11px;
   }
-  .book.is-open .chapter-progress {
+  .book:is(.is-open, .is-opening) .chapter-progress {
     font-size: 7px;
   }
   .is-open:before {
@@ -1273,7 +1273,7 @@ cite {
   }
   .book,
   .book.closed,
-  .book.is-open {
+  .book:is(.is-open, .is-opening) {
     height: 100%;
     min-height: 0;
     width: 100%;
@@ -1318,43 +1318,43 @@ cite {
     left: 8%;
     width: 12px;
   }
-  .book.is-open .active-page:not(.cover),
-  .book.is-open .under-page {
+  .book:is(.is-open, .is-opening) .active-page:not(.cover),
+  .book:is(.is-open, .is-opening) .under-page {
     left: 8%;
     width: 92%;
   }
-  .book.is-open .page:not(.cover) {
+  .book:is(.is-open, .is-opening) .page:not(.cover) {
     padding: 24px 22px 20px;
   }
-  .book.is-open h2 {
+  .book:is(.is-open, .is-opening) h2 {
     font-size: clamp(22px, 3.4dvh, 28px);
     line-height: 1.25;
   }
-  .book.is-open .narrative {
+  .book:is(.is-open, .is-opening) .narrative {
     font-size: 14px;
     line-height: 1.65;
     max-width: 100%;
   }
-  .book.is-open .illustration-scene {
+  .book:is(.is-open, .is-opening) .illustration-scene {
     flex: 1 1 230px;
     height: auto;
     min-height: 30px;
     max-height: 280px;
     margin: 12px -9px 8px;
   }
-  .book.is-open .chapter {
+  .book:is(.is-open, .is-opening) .chapter {
     width: 100%;
     margin-bottom: 20px;
     flex-shrink: 0;
   }
-  .book.is-open .eyebrow {
+  .book:is(.is-open, .is-opening) .eyebrow {
     margin-bottom: 14px;
   }
-  .book.is-open .folio {
+  .book:is(.is-open, .is-opening) .folio {
     padding-top: 12px;
     flex-shrink: 0;
   }
-  .book.is-open blockquote {
+  .book:is(.is-open, .is-opening) blockquote {
     font-size: clamp(23px, 3.7dvh, 30px);
     line-height: 1.4;
   }
@@ -1377,7 +1377,7 @@ cite {
   .rsvp {
     margin-top: 18px;
   }
-  .book.is-open .orbit-symbol.small {
+  .book:is(.is-open, .is-opening) .orbit-symbol.small {
     margin: 10px 0;
   }
 }
@@ -1389,11 +1389,11 @@ cite {
   .cover .age { margin-top: 10px; }
   .cover-subtitle { font-size: 11px; margin-bottom: 10px; }
   .open-book { min-height: 46px; padding: 10px 16px; }
-  .book.is-open .page:not(.cover) { padding: 18px 18px 14px; }
-  .book.is-open .chapter { margin-bottom: 12px; }
-  .book.is-open .eyebrow { margin-bottom: 10px; }
-  .book.is-open .narrative { font-size: 12px; line-height: 1.5; }
-  .book.is-open .small-sign { font-size: 13px; }
+  .book:is(.is-open, .is-opening) .page:not(.cover) { padding: 18px 18px 14px; }
+  .book:is(.is-open, .is-opening) .chapter { margin-bottom: 12px; }
+  .book:is(.is-open, .is-opening) .eyebrow { margin-bottom: 10px; }
+  .book:is(.is-open, .is-opening) .narrative { font-size: 12px; line-height: 1.5; }
+  .book:is(.is-open, .is-opening) .small-sign { font-size: 13px; }
   .gift-list { margin: 10px 0; }
   .gift-list li { padding: 8px 0; }
   .gift-list h3 { font-size: 13px; }
@@ -1401,5 +1401,25 @@ cite {
   .gift-vignette { flex-basis: 50px; }
   .rsvp input { padding: 12px 0; }
   .rsvp button { margin-top: 14px; }
-  .book.is-open .folio { padding-top: 7px; }
+  .book:is(.is-open, .is-opening) .folio { padding-top: 7px; }
+}
+
+.outer-label.is-hidden,
+.outer-dedication.is-hidden {
+  visibility: hidden;
+}
+@media (min-width: 501px) {
+  .book.is-opening {
+    width: 100%;
+  }
+  .book.is-opening .cover {
+    left: auto;
+    right: 0;
+    width: min(390px, 100%);
+  }
+}
+@media (max-width: 500px) {
+  .book.is-opening .cover {
+    will-change: transform;
+  }
 }
