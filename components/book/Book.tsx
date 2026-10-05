@@ -470,7 +470,6 @@ export default function Book() {
             </article>
           }
           <article
-            key={page}
             ref={leafRef}
             onAnimationEnd={(e) => {
               if (e.target !== e.currentTarget) return;
