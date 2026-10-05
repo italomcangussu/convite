@@ -1504,3 +1504,53 @@ cite {
 }
 
 .page-navigation.is-hidden { visibility: hidden; }
+
+
+/* iOS/WebKit: avoid rotating the real content layer through its backface.
+   Safari can keep the page background painted while dropping text/images.
+   A 2D sheet motion preserves the book-turn cue without losing descendants. */
+@keyframes turnNextMobile {
+  0% {
+    transform: translateX(0) rotateZ(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-104%) rotateZ(-1.2deg);
+    opacity: 0.98;
+  }
+}
+@keyframes turnPrevMobile {
+  0% {
+    transform: translateX(0) rotateZ(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(104%) rotateZ(1.2deg);
+    opacity: 0.98;
+  }
+}
+@media (max-width: 500px) {
+  .book-stage {
+    perspective: none;
+  }
+  .book {
+    transform-style: flat;
+  }
+  .page {
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+  }
+  .turn-next {
+    animation: turnNextMobile 0.58s cubic-bezier(0.24, 0.72, 0.2, 1) forwards;
+  }
+  .turn-prev {
+    animation: turnPrevMobile 0.58s cubic-bezier(0.24, 0.72, 0.2, 1) forwards;
+    transform-origin: center;
+  }
+  .cover.turn-next {
+    animation-duration: 0.72s;
+  }
+  .turning .active-page {
+    will-change: transform, opacity;
+  }
+}
