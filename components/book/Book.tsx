@@ -35,7 +35,8 @@ export default function Book() {
     [busy, setBusy] = useState(false),
     [settingsLoaded, setSettingsLoaded] = useState(!supabase),
     [audioReady, setAudioReady] = useState(false),
-    [audioFailed, setAudioFailed] = useState(false);
+    [audioFailed, setAudioFailed] = useState(false),
+    [openingAudio, setOpeningAudio] = useState(false);
   const leafRef = useRef<HTMLElement>(null);
   const gesture = useRef<PageGesture | null>(null);
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function Book() {
   }, [page]);
   const audio = useRef<HTMLAudioElement>(null),
     lock = useRef(false),
+    openingRequest = useRef(false),
     rsvpLock = useRef(false),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null),
     requestId = useRef("");
@@ -64,24 +66,41 @@ export default function Book() {
       if (timer.current) clearTimeout(timer.current);
     };
   }, []);
-  function startAudioFromGesture() {
-    const player = audio.current;
-    if (!player || !content.audioPath || !player.paused) return;
+  function configureAudio(player: HTMLAudioElement) {
+    const configuredVolume = Number(content.volume);
+    player.volume = Number.isFinite(configuredVolume)
+      ? Math.min(1, Math.max(0, configuredVolume))
+      : 0.5;
 
-    player.volume = content.volume;
     if (player.readyState >= HTMLMediaElement.HAVE_METADATA) {
-      const startAt = Math.max(0, content.audioStartAt);
+      const configuredStartAt = Number(content.audioStartAt);
+      const startAt = Number.isFinite(configuredStartAt)
+        ? Math.max(0, configuredStartAt)
+        : 0;
       const safeStartAt = Number.isFinite(player.duration)
         ? Math.min(startAt, Math.max(0, player.duration - 0.25))
         : startAt;
       if (player.currentTime < safeStartAt) player.currentTime = safeStartAt;
     }
+  }
 
-    // Call play synchronously from the user's click handler so Safari sees
-    // the playback request as part of the gesture that opened the book.
+  function startAudioFromGesture(): Promise<boolean> | null {
+    const player = audio.current;
+    if (!player || !content.audioPath) return null;
+    if (!player.paused) return Promise.resolve(true);
+
+    configureAudio(player);
+
+    // The play() call itself must happen synchronously inside the user's
+    // click. This is the gesture Safari/iOS uses to authorize audible media.
     const playback = player.play();
     setPlaying(true);
-    void playback.catch(() => setPlaying(false));
+    return playback
+      .then(() => true)
+      .catch(() => {
+        setPlaying(false);
+        return false;
+      });
   }
 
   function toggleAudio() {
@@ -91,7 +110,7 @@ export default function Book() {
       player.pause();
       setPlaying(false);
     } else {
-      startAudioFromGesture();
+      void startAudioFromGesture();
     }
   }
   function navigate(direction: number) {
@@ -108,18 +127,52 @@ export default function Book() {
     setTurn(0);
     lock.current = false;
   }
-  function open() {
-    if (lock.current || !canOpen) return;
+  function beginOpening() {
+    if (lock.current || page !== -1) return;
     lock.current = true;
+    setOpeningAudio(false);
     setTurn(1);
-    startAudioFromGesture();
     timer.current = setTimeout(finishOpening, 1200);
+  }
+  function continueOpeningAfterAudio() {
+    if (!openingRequest.current) return;
+    openingRequest.current = false;
+    setOpeningAudio(false);
+    beginOpening();
+  }
+  function open() {
+    if (lock.current || openingRequest.current || !settingsLoaded) return;
+
+    if (!audioUrl || audioFailed) {
+      beginOpening();
+      return;
+    }
+
+    // One tap owns both actions: authorize/start the music and open the book.
+    // Do not wait for a preload event before calling play(), because iOS Safari
+    // is allowed to defer media loading until this user gesture.
+    openingRequest.current = true;
+    setOpeningAudio(true);
+    const playback = startAudioFromGesture();
+
+    if (!playback) {
+      setAudioFailed(true);
+      continueOpeningAfterAudio();
+      return;
+    }
+
+    void playback.then((started) => {
+      if (!started) setAudioFailed(true);
+      continueOpeningAfterAudio();
+    });
   }
   function finishOpening() {
     if (timer.current) clearTimeout(timer.current);
     setPage(0);
     setTurn(0);
     lock.current = false;
+    openingRequest.current = false;
+    setOpeningAudio(false);
   }
   async function confirm(e: React.FormEvent) {
     e.preventDefault();
@@ -169,12 +222,11 @@ export default function Book() {
       ? supabase.storage.from("soundtracks").getPublicUrl(content.audioPath)
           .data.publicUrl
       : undefined;
-  const canOpen =
-    settingsLoaded && (!audioUrl || audioReady || audioFailed);
+  const canOpen = settingsLoaded && !openingAudio;
   const openingLabel = !settingsLoaded
     ? "Preparando convite…"
-    : audioUrl && !audioReady && !audioFailed
-      ? "Carregando música…"
+    : openingAudio
+      ? "Preparando música…"
       : audioFailed
         ? "Abrir sem música"
         : "Abrir o livro";
@@ -526,11 +578,13 @@ export default function Book() {
                 <p className="open-book-hint" id="open-book-hint">
                   {!settingsLoaded
                     ? "Preparando o convite…"
-                    : audioUrl && !audioReady && !audioFailed
-                      ? "A música está sendo preparada para começar ao abrir."
+                    : openingAudio
+                      ? "Só um instante: a música está começando e o livro abrirá automaticamente."
                       : audioFailed
-                        ? "A música não pôde ser preparada. O convite pode ser aberto sem ela."
-                        : "Toque para abrir o convite com a música."}
+                        ? "A música não pôde ser iniciada. O convite pode ser aberto sem ela."
+                        : audioUrl && !audioReady
+                          ? "Toque uma vez: este mesmo botão inicia a música e abre o livro."
+                          : "Toque uma vez para iniciar a música e abrir o livro."}
                 </p>
               </>
             ) : (
@@ -548,7 +602,10 @@ export default function Book() {
             onCanPlay={() => setAudioReady(true)}
             onLoadedMetadata={(event) => {
               const player = event.currentTarget;
-              const startAt = Math.max(0, content.audioStartAt);
+              const configuredStartAt = Number(content.audioStartAt);
+              const startAt = Number.isFinite(configuredStartAt)
+                ? Math.max(0, configuredStartAt)
+                : 0;
               const safeStartAt = Number.isFinite(player.duration)
                 ? Math.min(startAt, Math.max(0, player.duration - 0.25))
                 : startAt;
@@ -557,7 +614,10 @@ export default function Book() {
             }}
             onTimeUpdate={(event) => {
               const player = event.currentTarget;
-              const startAt = Math.max(0, content.audioStartAt);
+              const configuredStartAt = Number(content.audioStartAt);
+              const startAt = Number.isFinite(configuredStartAt)
+                ? Math.max(0, configuredStartAt)
+                : 0;
               if (
                 !player.paused &&
                 startAt > 0 &&
@@ -572,6 +632,7 @@ export default function Book() {
               setAudioReady(false);
               setAudioFailed(true);
               setPlaying(false);
+              continueOpeningAfterAudio();
             }}
           />
           {page >= 0 && audioUrl && !audioFailed && (
