@@ -40,7 +40,16 @@ insert into public.admins(user_id) values ('UUID-DO-USUARIO');
 
 Somente a tabela `admins` autoriza administração; uma conta autenticada sem associação não tem acesso. Abra `/admin`, entre com e-mail e senha. Para revogar, remova a linha de `admins` no SQL Editor: a RLS consulta associação atual, sem depender de metadados editáveis ou JWT com permissões antigas.
 
-O painel permite editar identidade, textos, frase e autoria, data, formato, horário, endereço, sugestões ordenadas e sua visibilidade; enviar/substituir/remover música, ouvir prévia e ajustar volume; pesquisar, ordenar, remover e exportar RSVPs (CSV ou uma lista numerada pronta para enviar por WhatsApp). Google Maps e Waze são gerados pelo endereço, sem APIs pagas ou iframe.
+O painel (`/admin`) é organizado na ordem do livro e abre em uma **Visão geral**: quantas famílias confirmaram e quando foi a última, quantos dias faltam para a festa, a música ativa, as sugestões visíveis, uma lista do que ainda falta preencher (data, horário, endereço, música) com atalho para cada item, o link do convite (copiar, compartilhar no WhatsApp, ver) e as últimas confirmações.
+
+- **Capa**: nome, idade, tema e subtítulo.
+- **Textos**: abertura, frase e autoria, encerramento e o convite da janela de confirmação. Cada bloco diz em qual página aparece.
+- **Data e local**: data e horário com prévia por extenso, formato da data, endereço com botões para testar Google Maps e Waze (os do convite são gerados do endereço, sem APIs pagas ou iframe).
+- **Presentes**: sugestões ordenáveis, com interruptor de visibilidade.
+- **Música**: enviar/trocar, ouvir a prévia, remover, cortar o silêncio inicial e volume.
+- **Confirmações**: pesquisar, ordenar, remover e exportar (WhatsApp, copiar lista ou CSV); em telas pequenas a tabela vira cartões.
+
+A seção atual fica no endereço (`/admin#rsvps`, `#music`, `#event`...), então o botão voltar do navegador retorna à seção anterior. Uma barra fixa mostra "Alterações não salvas" / "Tudo salvo" (Ctrl/Cmd+S também salva) e o navegador avisa antes de sair com edições pendentes. Os ícones são SVG próprios (`components/ui/Icon.tsx`): nada de setas ou emoji em texto, que o iOS desenha como emoji colorido.
 
 RSVP registra família, UUID, data/hora do banco e status. Público tem INSERT, sem SELECT/UPDATE/DELETE. O UUID do navegador torna reenvio idempotente. Contatos da família não são coletados. Em produção de grande alcance, considerar limitação de requisições/CAPTCHA para evitar spam.
 
@@ -132,7 +141,9 @@ Metadados e imagem de compartilhamento estão em `app/layout.tsx` e `public/og.s
 - `components/book/Scene.tsx`: cenas, imagens otimizadas e planeta em SVG.
 - `public/illustrations/`: três artes com transparência.
 - `docs/art-direction/`: direção de arte e prompts usados na geração integrada de imagens.
-- `components/admin/Admin.tsx`: autenticação e edição.
+- `components/admin/`: `Admin.tsx` (autenticação, dados, salvar) e um arquivo por seção (`Overview`, `ContentPanels`, `GiftsPanel`, `MusicPanel`, `RsvpPanel`); estilo em `app/admin/admin.css`.
+- `components/ui/Icon.tsx`: conjunto de ícones SVG do site todo.
+- `lib/admin.ts`: regras puras do painel (o que falta preencher, dias até a festa, tempo relativo).
 - `app/globals.css`: identidade, livro 3D, responsividade e movimento reduzido.
 - `lib/content.ts`: conteúdo inicial, datas e mapas.
 - `lib/supabase.ts`: cliente com chave pública.
