@@ -278,7 +278,7 @@ export default function Book() {
             ? "Toque uma vez: a música começa junto com o livro."
             : "Toque para abrir o livro.";
 
-  function body(p: number) {
+  function body(p: number, live: boolean) {
     return (
       <>
         <div className="chapter">
@@ -291,7 +291,7 @@ export default function Book() {
           <>
             <p className="eyebrow">Era uma vez, no nosso universo</p>
             <h2>{content.intro}</h2>
-            <Scene variant={1} />
+            <Scene variant={1} live={live} />
             <p className="narrative">{content.narrative}</p>
             <p className="small-sign">Com amor, nossa família</p>
           </>
@@ -304,7 +304,7 @@ export default function Book() {
             <p className="eyebrow">As coisas que ficam no coração</p>
             <blockquote>{content.quote}</blockquote>
             {content.quoteAuthor && <cite>{content.quoteAuthor}</cite>}
-            <Scene variant={2} />
+            <Scene variant={2} live={live} />
             <p className="small-sign">
               Uma história que estamos escrevendo juntos.
             </p>
@@ -325,14 +325,14 @@ export default function Book() {
               {content.time ? `${content.time} horas` : "Horário a anunciar"}
             </p>
             <p className="narrative">{content.dateNote}</p>
-            <Scene variant={3} />
+            <Scene variant={3} live={live} />
           </>
         )}
         {p === 3 && (
           <>
             <p className="eyebrow">Todo encontro tem seu pequeno planeta</p>
             <h2>{content.venue}</h2>
-            <Scene variant={4} />
+            <Scene variant={4} live={live} />
             <p className="address">
               {content.address || "Nosso endereço será anunciado em breve."}
             </p>
@@ -390,7 +390,7 @@ export default function Book() {
                 ))}
             </ul>
             <div className="gift-vignette">
-              <Scene variant={4} />
+              <Scene variant={4} live={live} />
             </div>
           </>
         )}
@@ -398,7 +398,7 @@ export default function Book() {
           <>
             <p className="eyebrow">Esta história continua com você</p>
             <h2>{content.closing}</h2>
-            <Scene variant={6} />
+            <Scene variant={6} live={live} />
             <p className="closing-name">{content.name}</p>
             <p className="small-sign">{content.age} de um amor infinito</p>
             <p className="last-step">
@@ -417,6 +417,8 @@ export default function Book() {
     );
   }
   const dragging = dragDir !== 0;
+  // Pictures hold still while a sheet is dragged or turning: the work goes to the turn.
+  const moving = turn !== 0 || dragging;
   // The sheet revealed by a turn (or by a drag in progress) lives under the leaf.
   const underPage =
     settlingPage ??
@@ -466,6 +468,7 @@ export default function Book() {
           <div className="inside-cover" aria-hidden="true">
             <Scene
               variant={page === 2 ? 3 : page === 3 || page === 4 ? 4 : 2}
+              live={false}
             />
             <span className="inside-cover-note">
               <InkStar />
@@ -477,7 +480,7 @@ export default function Book() {
             aria-hidden="true"
             inert
           >
-            {body(underPage)}
+            {body(underPage, moving || settlingPage !== null)}
           </article>
           <article
             ref={leafRef}
@@ -622,7 +625,10 @@ export default function Book() {
                   ))}
                 </h1>
                 <p className="age">{content.age}</p>
-                <Scene onReady={() => markArt("cover")} />
+                <Scene
+                  live={!moving}
+                  onReady={() => markArt("cover")}
+                />
                 <p className="cover-subtitle">{content.subtitle}</p>
                 <button
                   className="open-book"
@@ -660,7 +666,7 @@ export default function Book() {
                 </p>
               </>
             ) : (
-              body(page)
+              body(page, !moving)
             )}
           </article>
         </div>
@@ -669,8 +675,13 @@ export default function Book() {
       {/* Hidden: fetches the remaining illustrations before the book opens so
           no picture pops in while a page is turning. */}
       <div hidden>
-        <Scene variant={2} eager onReady={() => markArt("rose")} />
-        <Scene variant={3} eager onReady={() => markArt("flight")} />
+        <Scene variant={2} eager live={false} onReady={() => markArt("rose")} />
+        <Scene
+          variant={3}
+          eager
+          live={false}
+          onReady={() => markArt("flight")}
+        />
       </div>
       <audio ref={audio.ref} loop preload="auto" {...audio.elementProps} />
       {/* iPhone on its side: the book is made to be read standing up. */}

@@ -1049,29 +1049,6 @@ cite {
   margin-top: 12px;
   margin-bottom: 12px;
 }
-.illustration-scene img {
-  user-select: none;
-  pointer-events: none;
-  animation: illustration-drift 8s ease-in-out infinite;
-}
-.illustration-scene.scene-2 img {
-  animation-delay: -2.4s;
-}
-.illustration-scene.scene-3 img {
-  animation-delay: -4.1s;
-}
-.illustration-scene.scene-6 img {
-  animation-delay: -1.2s;
-}
-@keyframes illustration-drift {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-0.15deg);
-  }
-  50% {
-    transform: translateY(-4px) rotate(0.15deg);
-  }
-}
 .illustration-scene.scene-2 {
   max-height: 270px;
   margin-top: 18px;
@@ -1084,8 +1061,135 @@ cite {
   margin-top: 28px;
   opacity: 0.9;
 }
-.illustration-scene.scene-6 img {
-  transform: scale(0.84);
+/* The picture is a stack of sprites on a canvas that always fits the scene
+   ("contain"). Container units keep every motion proportional to the picture. */
+.illustration-scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+.scene-canvas {
+  position: relative;
+  flex: none;
+  width: 100%;
+  aspect-ratio: var(--ar, 1.25);
+  container-type: size;
+}
+@supports (width: 1cqw) {
+  .scene-canvas {
+    width: min(100cqw, 100cqh * var(--ar, 1.25));
+  }
+}
+.illustration-scene.scene-6 .scene-canvas {
+  scale: 0.84;
+}
+.scene-sprite {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.scene-sprite > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Light laid over the picture. Invisible until its animation runs, so with
+   reduced motion (or a frozen page) nothing extra shows. */
+.scene-fx {
+  position: absolute;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+}
+.fx-halo {
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 226, 150, 0.5) 0%,
+    rgba(255, 214, 130, 0.18) 38%,
+    rgba(255, 214, 130, 0) 68%
+  );
+}
+.fx-glint {
+  background:
+    radial-gradient(
+      circle,
+      #fffbe8 0,
+      rgba(255, 240, 200, 0.85) 14%,
+      rgba(255, 240, 200, 0) 34%
+    ),
+    linear-gradient(
+        90deg,
+        rgba(255, 246, 214, 0),
+        rgba(255, 246, 214, 0.95) 50%,
+        rgba(255, 246, 214, 0)
+      )
+      center / 100% 7% no-repeat,
+    linear-gradient(
+        0deg,
+        rgba(255, 246, 214, 0),
+        rgba(255, 246, 214, 0.95) 50%,
+        rgba(255, 246, 214, 0)
+      )
+      center / 7% 100% no-repeat;
+}
+.fx-mote {
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #fff7cf 0,
+    rgba(255, 228, 150, 0.55) 40%,
+    rgba(255, 228, 150, 0) 70%
+  );
+}
+.fx-streak {
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(226, 234, 255, 0),
+    rgba(226, 234, 255, 0.8) 60%,
+    rgba(226, 234, 255, 0)
+  );
+}
+/* The three gold marks of the SVG planet glimmer, one after the other. */
+.ink-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ink-twinkle 5s ease-in-out infinite;
+}
+.ink-spark-b {
+  animation-duration: 5.8s;
+  animation-delay: -2s;
+}
+.ink-spark-c {
+  animation-duration: 6.6s;
+  animation-delay: -4s;
+}
+@keyframes ink-twinkle {
+  0%,
+  36%,
+  64%,
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8) rotate(14deg);
+  }
+}
+/* A frozen page (being dragged or turned) also stops the SVG planet. */
+.ink-planet.is-paused .floating-planet,
+.ink-planet.is-paused .ink-spark {
+  animation-play-state: paused;
 }
 .gift-vignette {
   margin-top: auto;

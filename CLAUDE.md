@@ -9,4 +9,5 @@
 - Testes: `npm test` (unit), `npm run test:e2e` (Chromium + WebKit). `tests/audio.spec.ts` só roda com `NEXT_PUBLIC_SUPABASE_URL` definido (ver o topo do arquivo).
 - O RSVP é o sétimo capítulo, mas abre como diálogo (`RsvpDialog`) pelo "próximo" da última página (`LAST_PAGE` em `Book.tsx`); segue o `visualViewport` por causa do teclado do iPhone. Foco volta ao botão ao fechar.
 - Ícones: só `components/ui/Icon.tsx` (SVG). Setas e emoji em texto são proibidos (o iOS os desenha como emoji; `tests/icons.test.ts` falha). O painel tem CSS próprio em `app/admin/admin.css`.
+- Ilustrações: não editar `public/illustrations/layers/` nem `art-manifest.json` à mão; são gerados por `scripts/slice_art.py` a partir dos PNGs. O movimento mora em `components/book/art.ts` (propriedades individuais `translate/rotate/scale/opacity`, medidas em `cqw`, todas em `startTime = 0` para as cópias da cena ficarem em fase). Movimento de camada tem de começar e terminar na pose de repouso (`tests/art.test.ts`). `Scene` recebe `live`: a folha arrastada/virando fica parada.
 - Não validado em iPhone real: reprodução de áudio e a virada 2D.

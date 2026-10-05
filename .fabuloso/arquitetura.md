@@ -11,7 +11,8 @@ Convite mobile em forma de livro noturno (Next.js App Router 16, React 19, TS, C
 | `components/admin` | painel /admin (login, conteúdo, trilha, RSVPs) | `Admin.tsx` | `--relates components/admin/Admin.tsx` |
 | `lib` | conteúdo padrão/tipos, cliente Supabase, helpers de áudio | `content.ts` | `--find defaults --json` |
 | `app` | rotas (`/`, `/admin`), layout/fonte (Poppins), OG image, **todo o CSS** | `globals.css` | — |
-| `public/illustrations` | 3 PNGs grandes (~1,5 MB cada), servidos por `next/image` | — | — |
+| `public/illustrations` | 3 PNGs de origem (usados só pelo slicer e pela imagem OG) + `layers/`: sprites WebP gerados | `art-manifest.json` | — |
+| `scripts` | `slice_art.py`: fatia os PNGs em camadas (exige `pillow numpy scipy`), confere que empilhadas dão a arte original | — | — |
 | `tests` | unit (`tsx --test`), PGlite p/ RLS, e2e Playwright | `*.spec.ts`, `*.test.ts` | `--affected <arquivo>` |
 
 ## Fronteiras
@@ -19,10 +20,12 @@ Convite mobile em forma de livro noturno (Next.js App Router 16, React 19, TS, C
 - Áudio: um único `<audio>` fora das folhas (`useBookAudio`); trilha de `content.audioPath` (Storage público) é pré-baixada como Blob e só toca por gesto: `play()` síncrono no clique de "Abrir o livro", sem esperar a promessa.
 - RSVP: sétimo capítulo, aberto como diálogo (`components/book/RsvpDialog.tsx`) pelo "próximo" da última página do livro; o livro tem 6 folhas (`LAST_PAGE`). Segue `visualViewport` (teclado do iPhone).
 - Carregamento: `bookLoad()` (`lib/loading.ts`) decide quando o livro pode abrir (texto via `useInvitationContent`, arte, fontes, trilha); falha no texto = estado de erro com retry.
+- Ilustrações: `Scene.tsx` monta as camadas do manifesto (`components/book/art.ts` define o movimento; Web Animations API num relógio só, `startTime = 0`, para cópias da mesma cena ficarem em fase). `live` congela a folha arrastada/virando. Camadas e manifesto são gerados: não editar à mão.
 - UI: todo o estilo em `app/globals.css` (arquivo único, ~1,5k linhas; blocos adicionados por camadas, o último vence). Folha ativa (`.active-page`) + folha de baixo (`.under-page`) + `settlingPage` evitam piscar no Safari.
 - Rotas: `/` (livro), `/admin` (protegido por `admins`).
 
 ## Fora do alcance do agentmap
+- `scripts/slice_art.py` (Python) e `public/illustrations/layers/` (WebP).
 - `app/globals.css` — CSS/animações (virada: `turnNext/turnPrev` desktop, `turnNextMobile/turnPrevMobile` ≤500px).
 - `supabase/` — SQL, RLS, config.
 - `docs/`, `Dockerfile`, `.github/workflows/ci.yml` (lint, typecheck, unit, e2e em chromium+webkit).
