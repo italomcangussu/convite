@@ -137,7 +137,10 @@ export default function Book() {
     return (
       <>
         <div className="chapter">
-          <span>{String(p + 1).padStart(2, "0")}</span> · {chapters[p]}
+          <span className="chapter-progress">
+            PÁGINA {p + 1} <i>·</i> 07
+          </span>
+          <span className="chapter-title">{chapters[p]}</span>
         </div>
         {p === 0 && (
           <>
@@ -295,7 +298,7 @@ export default function Book() {
   return (
     <main className="universe">
       <div className="ambient-stars" aria-hidden="true">
-        {Array.from({ length: 45 }, (_, i) => (
+        {Array.from({ length: 24 }, (_, i) => (
           <i
             key={i}
             style={{
@@ -308,10 +311,12 @@ export default function Book() {
           />
         ))}
       </div>
-      <div className="outer-label">UM CONVITE ESCRITO NAS ESTRELAS</div>
+      {page < 0 && (
+        <div className="outer-label">UM CONVITE ESCRITO NAS ESTRELAS</div>
+      )}
       <div className="book-stage">
         <div
-          className={`book ${page === -1 ? "closed" : ""} ${turn ? "turning" : ""}`}
+          className={`book ${page === -1 ? "closed" : "is-open"} ${turn ? "turning" : ""}`}
           onKeyDown={(e) => {
             if ((e.target as HTMLElement).closest("input,textarea")) return;
             if (e.key === "ArrowRight") {
@@ -326,6 +331,15 @@ export default function Book() {
           tabIndex={0}
           aria-label="Livro do aniversário. Use as teclas direita e esquerda para virar as páginas."
         >
+          <div className="inside-cover" aria-hidden="true">
+            <Scene
+              variant={page === 2 ? 3 : page === 3 || page === 4 ? 4 : 2}
+            />
+            <span className="inside-cover-note">
+              <InkStar />
+              <span>com carinho</span>
+            </span>
+          </div>
           {
             <article className="page under-page" aria-hidden="true" inert>
               {body(page < 0 ? 0 : Math.min(6, Math.max(0, page + turn)), true)}
@@ -426,7 +440,11 @@ export default function Book() {
           </button>
         </>
       )}
-      <p className="outer-dedication">Para quem faz parte do nosso universo.</p>
+      {page < 0 && (
+        <p className="outer-dedication">
+          Para quem faz parte do nosso universo.
+        </p>
+      )}
     </main>
   );
 }

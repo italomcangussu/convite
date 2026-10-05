@@ -13,7 +13,7 @@ test("abre o livro, navega pelas bordas e confirma sem fingir persistência", as
   );
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Vicente Matheus" }),
+    page.getByRole("heading", { name: "Vicente Mateus" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Abrir o livro" }).click();
   await expect(page.locator(".active-page h2")).toContainText("Há um ano");

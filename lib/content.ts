@@ -27,7 +27,7 @@ export type Content = {
   volume: number;
 };
 export const defaults: Content = {
-  name: "Vicente Matheus",
+  name: "Vicente Mateus",
   age: "1 ano",
   title: "O Pequeno Príncipe",
   subtitle: "Uma pequena grande aventura",

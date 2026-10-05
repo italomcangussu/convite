@@ -1,4 +1,4 @@
-# O livro de Vicente Matheus
+# O livro de Vicente Mateus
 
 Convite mobile em formato de livro noturno, inspirado apenas no ritmo narrativo das referências. Ilustrações originais de linguagem manual, ornamentos SVG, capa física em CSS 3D, sete capítulos, navegação por swipe, bordas e teclado. Não inclui fotos ou reserva de presentes.
 
