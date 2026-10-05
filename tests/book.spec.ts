@@ -77,7 +77,7 @@ test("admin permanece protegido", async ({ page }) => {
 });
 
 
-test("WebKit prepara a música antes de abrir e toca no gesto do usuário", async ({
+test("WebKit usa o mesmo toque para iniciar a música e abrir o livro", async ({
   page,
   browserName,
 }) => {
@@ -89,7 +89,7 @@ test("WebKit prepara a música antes de abrir e toca no gesto do usuário", asyn
     HTMLMediaElement.prototype.play = function () {
       const state = window as Window & { __invitationPlayCalls?: number };
       state.__invitationPlayCalls = (state.__invitationPlayCalls ?? 0) + 1;
-      return Promise.resolve();
+      return new Promise<void>((resolve) => setTimeout(resolve, 80));
     };
   });
 
@@ -106,13 +106,14 @@ test("WebKit prepara a música antes de abrir e toca no gesto do usuário", asyn
   );
 
   const openButton = page.getByRole("button", {
-    name: /Abrir o livro|Carregando música|Preparando convite/,
+    name: /Abrir o livro|Preparando convite/,
   });
 
+  // Safari/iOS pode não avançar o buffer antes do primeiro gesto.
+  // O botão precisa estar disponível sem depender de canplay.
+  await expect(openButton).toBeEnabled();
   await expect(page.locator(".audio-control")).toHaveCount(0);
 
-  await audio.dispatchEvent("canplay");
-  await expect(openButton).toBeEnabled();
   await openButton.click();
 
   await expect
@@ -124,6 +125,9 @@ test("WebKit prepara a música antes de abrir e toca no gesto do usuário", asyn
       ),
     )
     .toBe(1);
+
+  await expect(openButton).toHaveAttribute("aria-busy", "true");
+  await expect(openButton).toContainText("Preparando música");
 
   await expect(page.locator(".active-page h2")).toBeVisible();
   await expect(page.locator(".audio-control")).toHaveCount(1);
