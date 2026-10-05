@@ -32,7 +32,10 @@ export default function Book() {
     [playing, setPlaying] = useState(false),
     [family, setFamily] = useState(""),
     [status, setStatus] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [settingsLoaded, setSettingsLoaded] = useState(!supabase),
+    [audioReady, setAudioReady] = useState(false),
+    [audioFailed, setAudioFailed] = useState(false);
   const leafRef = useRef<HTMLElement>(null);
   const gesture = useRef<PageGesture | null>(null);
   useEffect(() => {
@@ -52,7 +55,9 @@ export default function Book() {
         .eq("id", 1)
         .single()
         .then(({ data }) => {
-          if (mounted && data) setContent({ ...defaults, ...data.content });
+          if (!mounted) return;
+          if (data) setContent({ ...defaults, ...data.content });
+          setSettingsLoaded(true);
         });
     return () => {
       mounted = false;
@@ -104,7 +109,7 @@ export default function Book() {
     lock.current = false;
   }
   function open() {
-    if (lock.current) return;
+    if (lock.current || !canOpen) return;
     lock.current = true;
     setTurn(1);
     startAudioFromGesture();
@@ -164,6 +169,26 @@ export default function Book() {
       ? supabase.storage.from("soundtracks").getPublicUrl(content.audioPath)
           .data.publicUrl
       : undefined;
+  const canOpen =
+    settingsLoaded && (!audioUrl || audioReady || audioFailed);
+  const openingLabel = !settingsLoaded
+    ? "Preparando convite…"
+    : audioUrl && !audioReady && !audioFailed
+      ? "Carregando música…"
+      : audioFailed
+        ? "Abrir sem música"
+        : "Abrir o livro";
+
+  useEffect(() => {
+    setAudioFailed(false);
+    if (!audioUrl) {
+      setAudioReady(settingsLoaded);
+      return;
+    }
+    setAudioReady(false);
+    audio.current?.load();
+  }, [audioUrl, settingsLoaded]);
+
   function body(p: number, behind = false) {
     return (
       <>
@@ -488,15 +513,24 @@ export default function Book() {
                 <Scene />
                 <p className="cover-subtitle">{content.subtitle}</p>
                 <button
-                  className="open-book"
+                  className={`open-book ${!canOpen ? "is-loading" : ""}`}
                   onClick={open}
+                  disabled={!canOpen}
+                  aria-busy={!canOpen}
                   aria-describedby="open-book-hint"
                 >
-                  Abrir o livro{" "}
-                  <span aria-hidden="true">→</span>
+                  {!canOpen && <span className="open-book-spinner" aria-hidden="true" />}
+                  <span className="open-book-label">{openingLabel}</span>
+                  {canOpen && <span className="open-book-arrow" aria-hidden="true">→</span>}
                 </button>
                 <p className="open-book-hint" id="open-book-hint">
-                  Toque no botão para ver o convite
+                  {!settingsLoaded
+                    ? "Preparando o convite…"
+                    : audioUrl && !audioReady && !audioFailed
+                      ? "A música está sendo preparada para começar ao abrir."
+                      : audioFailed
+                        ? "A música não pôde ser preparada. O convite pode ser aberto sem ela."
+                        : "Toque para abrir o convite com a música."}
                 </p>
               </>
             ) : (
@@ -505,13 +539,13 @@ export default function Book() {
           </article>
         </div>
       </div>
-      {audioUrl && (
-        <>
+      <>
           <audio
             ref={audio}
             src={audioUrl}
             loop
-            preload="metadata"
+            preload="auto"
+            onCanPlay={() => setAudioReady(true)}
             onLoadedMetadata={(event) => {
               const player = event.currentTarget;
               const startAt = Math.max(0, content.audioStartAt);
@@ -534,18 +568,23 @@ export default function Book() {
             }}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onError={() => setPlaying(false)}
+            onError={() => {
+              setAudioReady(false);
+              setAudioFailed(true);
+              setPlaying(false);
+            }}
           />
-          <button
-            className="audio-control"
-            onClick={toggleAudio}
-            aria-label={playing ? "Pausar música" : "Reproduzir música"}
-            aria-pressed={playing}
-          >
-            {playing ? "♫" : "♪"}
-          </button>
+          {audioUrl && !audioFailed && (
+            <button
+              className="audio-control"
+              onClick={toggleAudio}
+              aria-label={playing ? "Pausar música" : "Reproduzir música"}
+              aria-pressed={playing}
+            >
+              {playing ? "♫" : "♪"}
+            </button>
+          )}
         </>
-      )}
       <footer className="reader-footer">
         <nav
           className={`page-navigation ${page < 0 ? "is-hidden" : ""}`}
