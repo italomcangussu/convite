@@ -36,7 +36,8 @@ export default function Book() {
     [settingsLoaded, setSettingsLoaded] = useState(!supabase),
     [audioReady, setAudioReady] = useState(false),
     [audioFailed, setAudioFailed] = useState(false),
-    [openingAudio, setOpeningAudio] = useState(false);
+    [openingAudio, setOpeningAudio] = useState(false),
+    [settlingPage, setSettlingPage] = useState<number | null>(null);
   const leafRef = useRef<HTMLElement>(null);
   const gesture = useRef<PageGesture | null>(null);
   useEffect(() => {
@@ -118,6 +119,7 @@ export default function Book() {
   function navigate(direction: number) {
     if (lock.current || page + direction < 0 || page + direction > 6) return;
     lock.current = true;
+    setSettlingPage(null);
     setDrag(0);
     setTurn(direction);
     timer.current = setTimeout(() => finishTurn(direction), 1000);
@@ -125,9 +127,18 @@ export default function Book() {
   function finishTurn(direction: number) {
     if (!lock.current) return;
     if (timer.current) clearTimeout(timer.current);
-    setPage((p) => p + direction);
+    const nextPage = Math.min(6, Math.max(0, page + direction));
+    setSettlingPage(nextPage);
+    setPage(nextPage);
     setTurn(0);
     lock.current = false;
+
+    // Keep the already-rendered destination sheet above the updated leaf for
+    // two paint frames. This prevents Safari/WebKit from exposing the bare
+    // book background while React swaps text and illustrations.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setSettlingPage(null));
+    });
   }
   function beginOpening() {
     if (lock.current || page !== -1) return;
@@ -465,8 +476,16 @@ export default function Book() {
             </span>
           </div>
           {
-            <article className="page under-page" aria-hidden="true" inert>
-              {body(page < 0 ? 0 : Math.min(6, Math.max(0, page + turn)), true)}
+            <article
+              className={`page under-page ${settlingPage !== null ? "is-settling" : ""}`}
+              aria-hidden="true"
+              inert
+            >
+              {body(
+                settlingPage ??
+                  (page < 0 ? 0 : Math.min(6, Math.max(0, page + turn))),
+                true,
+              )}
             </article>
           }
           <article
