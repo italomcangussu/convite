@@ -80,6 +80,7 @@ export default function OpenGraphImage() {
           />
           <img
             src={illustrationSrc}
+            alt=""
             width={600}
             height={480}
             style={{ width: 600, height: 480, objectFit: "contain" }}
