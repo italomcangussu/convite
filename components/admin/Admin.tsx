@@ -63,7 +63,16 @@ export default function Admin() {
       );
       setAuthorized(false);
     } else {
-      setContent({ ...defaults, ...settings.data.content });
+      const loaded = { ...defaults, ...settings.data.content } as Content;
+      const loadedStartAt = Number(loaded.audioStartAt);
+      const loadedVolume = Number(loaded.volume);
+      setContent({
+        ...loaded,
+        audioStartAt: Number.isFinite(loadedStartAt) ? Math.max(0, loadedStartAt) : 0,
+        volume: Number.isFinite(loadedVolume)
+          ? Math.min(1, Math.max(0, loadedVolume))
+          : defaults.volume,
+      });
       setRsvps(confirmations.data);
       setAuthorized(true);
     }
