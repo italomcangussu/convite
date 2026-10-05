@@ -9,3 +9,14 @@ Arquitetura: Next App Router; experiência client-side com estado central de pá
 Página atual e próxima usam a mesma arte vetorial leve; a folha ativa gira em perspectiva. Swipe curto volta à posição original. Links e formulários não disparam navegação. Folhas mantêm toda a narrativa na primeira versão, com ajustes por altura de tela. Música permanece fora da árvore das folhas. A primeira interação inicia o arquivo enviado pelo admin, sem arquivo padrão provisório.
 
 Limitações iniciais: ausência de backend e dados reais não bloqueia a leitura. Datas, endereço, frases e música ficam editáveis. RSVP e administração requerem ambiente configurado. SVG de Open Graph preparado; trocar por PNG em produção para compatibilidade com redes sociais.
+
+## Movimento, abertura e carregamento
+
+Princípio: a abertura é o momento mais importante. O livro só abre quando está inteiro (texto, arte, fontes, música), e o toque que o abre dispara a música e a capa no mesmo instante. A capa mostra o carregamento na própria barra do botão; pronto, o botão respira (anel de brilho) e um reflexo atravessa a capa de tempos em tempos.
+
+- Capa: entrada em cascata, estrela da capa desenhada como nanquim (`pathLength` + `stroke-dashoffset`), reflexo diagonal (`.cover-sheen`) só enquanto está pronto. Ao abrir, poeira de estrelas sai da lombada.
+- Cenário: nebulosa lenta, estrelas com brilhos/durações variados, duas estrelas cadentes raras. Tudo atrás do livro, sem eventos, desligado em `prefers-reduced-motion`.
+- Virada: a folha segue o dedo (`--drag-x/--drag-r` definidos por ref, sem re-render a cada movimento), a página de baixo já mostra o destino e escurece como sombra projetada (`.under-page:before`). A virada herda a posição (`--turn-from-*`) e a duração proporcional ao que falta (`--turn-ms`). Soltar curto devolve a folha com uma mola (Web Animations API).
+- Música: botão com equalizador (barras animadas quando toca) e convite "Toque para ouvir a música" se o navegador recusar o `play()`.
+
+Regras de segurança para o Safari/iOS (não quebrar): sem 3D/backface no celular; só `transform`/`opacity` animam dentro das folhas; nenhuma animação de entrada nos filhos da folha ativa (ela substitui a folha de baixo por uma "janela" de dois quadros, e um fade de entrada piscaria); animações infinitas no botão usam `box-shadow` ou pseudo-elementos para não mudar a caixa do botão (o Playwright espera a posição estabilizar antes de clicar).

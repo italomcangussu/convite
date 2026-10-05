@@ -7,6 +7,7 @@ export default function InkStar({ className = "" }: { className?: string }) {
       aria-hidden="true"
     >
       <path
+        pathLength={1}
         d="m16.1 2.8 3.4 9.7 9.7 3.8-9.4 3.3-3.7 9.7-3.6-9.3-9.7-3.7 9.7-3.7z"
         stroke="currentColor"
         strokeWidth="1.2"
