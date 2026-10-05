@@ -225,6 +225,7 @@ p {
       #0d1b2c
     );
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   overflow: hidden;
   transform-origin: left center;
   touch-action: pan-y;
@@ -249,6 +250,8 @@ p {
 .under-page {
   z-index: 1;
   pointer-events: none;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 .cover {
   padding: 44px 29px 27px;
@@ -598,6 +601,10 @@ cite {
 }
 .turning .active-page {
   box-shadow: 12px 2px 28px #0008;
+  will-change: transform, filter;
+}
+.turning .under-page {
+  will-change: transform;
 }
 @keyframes turnNext {
   0% {
