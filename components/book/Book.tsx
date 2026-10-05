@@ -45,6 +45,7 @@ export default function Book() {
   const audio = useRef<HTMLAudioElement>(null),
     lock = useRef(false),
     openingRequest = useRef(false),
+    audioGateTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
     rsvpLock = useRef(false),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null),
     requestId = useRef("");
@@ -64,6 +65,7 @@ export default function Book() {
     return () => {
       mounted = false;
       if (timer.current) clearTimeout(timer.current);
+      if (audioGateTimer.current) clearTimeout(audioGateTimer.current);
     };
   }, []);
   function configureAudio(player: HTMLAudioElement) {
@@ -136,6 +138,10 @@ export default function Book() {
   }
   function continueOpeningAfterAudio() {
     if (!openingRequest.current) return;
+    if (audioGateTimer.current) {
+      clearTimeout(audioGateTimer.current);
+      audioGateTimer.current = null;
+    }
     openingRequest.current = false;
     setOpeningAudio(false);
     beginOpening();
@@ -161,6 +167,12 @@ export default function Book() {
       return;
     }
 
+    // Never trap the invitation behind a stalled network request.
+    // The playback attempt remains active, so the music may still join later.
+    audioGateTimer.current = setTimeout(() => {
+      continueOpeningAfterAudio();
+    }, 8000);
+
     void playback.then((started) => {
       if (!started) setAudioFailed(true);
       continueOpeningAfterAudio();
@@ -172,6 +184,10 @@ export default function Book() {
     setTurn(0);
     lock.current = false;
     openingRequest.current = false;
+    if (audioGateTimer.current) {
+      clearTimeout(audioGateTimer.current);
+      audioGateTimer.current = null;
+    }
     setOpeningAudio(false);
   }
   async function confirm(e: React.FormEvent) {
