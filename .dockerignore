@@ -1,0 +1,14 @@
+.git
+.next
+node_modules
+.env*
+env.local
+.vercel
+playwright-report
+test-results
+.playwright-cli
+output
+*.tsbuildinfo
+*.log
+.DS_Store
+supabase/.temp

@@ -13,6 +13,17 @@ const chapters = [
   "Sua família, nossa história",
   "Até as estrelas",
 ];
+type PageGesture = {
+  pointerId: number;
+  x: number;
+  y: number;
+  width: number;
+  axis: "pending" | "horizontal";
+  lastX: number;
+  lastAt: number;
+  velocity: number;
+  captured: boolean;
+};
 export default function Book() {
   const [content, setContent] = useState<Content>(defaults),
     [page, setPage] = useState(-1),
@@ -23,11 +34,11 @@ export default function Book() {
     [status, setStatus] = useState(""),
     [busy, setBusy] = useState(false);
   const leafRef = useRef<HTMLElement>(null);
+  const gesture = useRef<PageGesture | null>(null);
   useEffect(() => {
     leafRef.current?.scrollTo({ top: 0 });
   }, [page]);
   const audio = useRef<HTMLAudioElement>(null),
-    start = useRef<{ x: number; y: number } | null>(null),
     lock = useRef(false),
     rsvpLock = useRef(false),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null),
@@ -329,7 +340,7 @@ export default function Book() {
             }
           }}
           tabIndex={0}
-          aria-label="Livro do aniversário. Use as teclas direita e esquerda para virar as páginas."
+          aria-label="Livro do aniversário. Arraste a página para avançar ou voltar, toque nas bordas ou use as teclas de direção."
         >
           <div className="inside-cover" aria-hidden="true">
             <Scene
@@ -347,7 +358,7 @@ export default function Book() {
           }
           <article
             ref={leafRef}
-            className={`page active-page ${page === -1 ? "cover" : ""} ${turn === 1 ? "turn-next" : turn === -1 ? "turn-prev" : ""}`}
+            className={`page active-page ${page === -1 ? "cover" : ""} ${drag ? "is-dragging" : ""} ${turn === 1 ? "turn-next" : turn === -1 ? "turn-prev" : ""}`}
             style={
               drag
                 ? {
@@ -358,35 +369,76 @@ export default function Book() {
             onPointerDown={(e) => {
               if ((e.target as HTMLElement).closest("button,a,input,form"))
                 return;
-              start.current = { x: e.clientX, y: e.clientY };
-              e.currentTarget.setPointerCapture(e.pointerId);
+              gesture.current = {
+                pointerId: e.pointerId,
+                x: e.clientX,
+                y: e.clientY,
+                width: e.currentTarget.getBoundingClientRect().width,
+                axis: "pending",
+                lastX: e.clientX,
+                lastAt: e.timeStamp,
+                velocity: 0,
+                captured: false,
+              };
             }}
             onPointerMove={(e) => {
-              if (
-                start.current &&
-                page >= 0 &&
-                !lock.current &&
-                Math.abs(e.clientX - start.current.x) > 15
-              )
-                setDrag(e.clientX - start.current.x);
+              const active = gesture.current;
+              if (!active || active.pointerId !== e.pointerId) return;
+              const dx = e.clientX - active.x;
+              const dy = e.clientY - active.y;
+              if (active.axis === "pending") {
+                if (Math.max(Math.abs(dx), Math.abs(dy)) < 9) return;
+                if (Math.abs(dy) > Math.abs(dx) * 1.15) {
+                  gesture.current = null;
+                  return;
+                }
+                if (
+                  Math.abs(dx) <= Math.abs(dy) * 1.15 ||
+                  page < 0 ||
+                  lock.current
+                )
+                  return;
+                active.axis = "horizontal";
+              }
+              if (active.axis !== "horizontal" || page < 0 || lock.current)
+                return;
+              if (!active.captured) {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                active.captured = true;
+              }
+              e.preventDefault();
+              const elapsed = Math.max(1, e.timeStamp - active.lastAt);
+              active.velocity = (e.clientX - active.lastX) / elapsed;
+              active.lastX = e.clientX;
+              active.lastAt = e.timeStamp;
+              setDrag(Math.max(-62, Math.min(62, (dx / active.width) * 110)));
             }}
             onPointerUp={(e) => {
-              if (!start.current) return;
-              const dx = e.clientX - start.current.x,
-                dy = e.clientY - start.current.y;
-              start.current = null;
+              const active = gesture.current;
+              if (!active || active.pointerId !== e.pointerId) return;
+              const dx = e.clientX - active.x,
+                dy = e.clientY - active.y;
+              gesture.current = null;
               setDrag(0);
               if (page < 0) return;
-              if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+              if (
+                active.axis === "horizontal" &&
+                (Math.abs(dx) > Math.max(42, active.width * 0.16) ||
+                  (Math.abs(dx) > 22 && Math.abs(active.velocity) > 0.45))
+              ) {
                 navigate(dx < 0 ? 1 : -1);
-              } else if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+              } else if (
+                active.axis === "pending" &&
+                Math.abs(dx) < 12 &&
+                Math.abs(dy) < 12
+              ) {
                 const rect = e.currentTarget.getBoundingClientRect();
                 if (e.clientX - rect.left < rect.width * 0.16) navigate(-1);
                 if (e.clientX - rect.left > rect.width * 0.84) navigate(1);
               }
             }}
             onPointerCancel={() => {
-              start.current = null;
+              gesture.current = null;
               setDrag(0);
             }}
           >
@@ -408,12 +460,17 @@ export default function Book() {
                 <p className="age">{content.age}</p>
                 <Scene />
                 <p className="cover-subtitle">{content.subtitle}</p>
-                <button className="open-book" onClick={open}>
+                <button
+                  className="open-book"
+                  onClick={open}
+                  aria-describedby="open-book-hint"
+                >
                   Abrir o livro{" "}
-                  <span>
-                    <InkStar />
-                  </span>
+                  <span aria-hidden="true">→</span>
                 </button>
+                <p className="open-book-hint" id="open-book-hint">
+                  Toque no botão para ver o convite
+                </p>
               </>
             ) : (
               body(page)

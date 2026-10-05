@@ -3,6 +3,7 @@ node_modules/
 # Credenciais e configurações de ambiente (inclusive backups).
 .env*
 !.env.example
+!.env.production.example
 env.local
 .vercel/
 playwright-report/

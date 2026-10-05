@@ -65,7 +65,31 @@ Testes unitários cobrem geração de links e data. Testes de navegador cobrem l
 
 ## Deploy
 
-Publique como aplicação Next.js (Vercel ou host Node). Configure as mesmas variáveis públicas no build e a URL de produção. Execute migrations antes da publicação. Em Node: `npm run build` e `npm start`.
+### VPS com Docker
+
+O Dockerfile faz um build multi-stage do Next.js em modo standalone. A imagem final contém apenas o servidor e os arquivos necessários, roda como usuário sem privilégios e inclui healthcheck. O Compose mantém o container ativo após reinícios e publica a porta somente em `127.0.0.1`, para receber tráfego de um proxy reverso com HTTPS.
+
+Na VPS, instale Docker Engine com o plugin Compose, clone este repositório e configure o ambiente de produção:
+
+```sh
+cp .env.production.example .env.production
+nano .env.production
+docker compose --env-file .env.production up -d --build
+```
+
+Preencha `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e `SITE_URL` com os valores de produção. `HOST_PORT` pode permanecer em `3000`; use o host `127.0.0.1:3000` como upstream no Nginx ou Caddy. As variáveis públicas do Supabase são incorporadas ao bundle durante o build. Não coloque uma chave `service_role` nesse arquivo. Execute as migrations Supabase antes de receber confirmações.
+
+Confira o estado e os logs:
+
+```sh
+docker compose --env-file .env.production ps
+docker compose --env-file .env.production logs -f web
+curl -I http://127.0.0.1:3000
+```
+
+Para publicar atualizações, faça `git pull` e rode novamente `docker compose --env-file .env.production up -d --build`. O Docker reconstrói a imagem e recria o container. O `.dockerignore` exclui `.env*`, credenciais, dependências locais e artefatos de desenvolvimento do contexto enviado ao build.
+
+Também é possível hospedar como aplicação Next.js em Vercel ou em outro host Node. Configure as mesmas variáveis públicas no build e a URL de produção. Em Node: `npm run build` e `npm start`.
 
 Metadados e imagem de compartilhamento estão em `app/layout.tsx` e `public/og.svg`; substitua SVG por PNG/JPEG para compatibilidade ampla dos previews sociais. A metadata padrão corresponde à identidade inicial; atualize-a se mudar nome/idade. Indexação está desativada por privacidade; ajuste se desejar tornar o convite pesquisável.
 
