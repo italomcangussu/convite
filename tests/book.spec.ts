@@ -1,0 +1,77 @@
+import { test, expect } from "@playwright/test";
+test("abre o livro, navega pelas bordas e confirma sem fingir persistência", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.route("**/rest/v1/rsvps**", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Service temporarily unavailable" }),
+    }),
+  );
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Vicente Matheus" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Abrir o livro" }).click();
+  await expect(page.locator(".active-page h2")).toContainText("Há um ano");
+  const leaf = page.locator(".active-page");
+  let box = (await leaf.boundingBox())!;
+  await page.mouse.click(box.x + box.width - 8, box.y + box.height * 0.5);
+  await expect(leaf.locator("blockquote")).toBeVisible();
+  box = (await leaf.boundingBox())!;
+  await page.mouse.click(box.x + 8, box.y + box.height * 0.5);
+  await expect(leaf.locator("h2")).toContainText("Há um ano");
+  for (let i = 0; i < 5; i++) {
+    await page.locator(".book").focus();
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(720);
+  }
+  await page.locator(".active-page input").fill("Família Teste");
+  await page.locator(".active-page button").click();
+  await expect(leaf.getByRole("status")).toContainText(
+    /serão abertas|Não foi possível/,
+  );
+  await page.locator(".book").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(leaf.locator("h2")).toContainText("Algumas estrelas");
+  await page.keyboard.press("ArrowLeft");
+  await page.waitForTimeout(720);
+  await expect(leaf.locator("h2")).toContainText("Tem um lugar");
+  expect(errors).toEqual([]);
+  await page.screenshot({
+    path: `test-results/book-${test.info().project.name}.png`,
+  });
+});
+test("gesto horizontal avança e volta, gesto curto cancela", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Abrir o livro" }).click();
+  await expect(page.locator(".active-page h2")).toContainText("Há um ano");
+  const leaf = page.locator(".active-page");
+  const box = (await leaf.boundingBox())!;
+  async function drag(from: number, to: number) {
+    await page.mouse.move(box.x + from, box.y + box.height * 0.55);
+    await page.mouse.down();
+    await page.mouse.move(box.x + to, box.y + box.height * 0.55, { steps: 8 });
+    await page.mouse.up();
+  }
+  await drag(260, 80);
+  await expect(leaf.locator("blockquote")).toBeVisible();
+  await drag(100, 280);
+  await expect(leaf.locator("h2")).toContainText("Há um ano");
+  await drag(180, 160);
+  await expect(leaf.locator("h2")).toContainText("Há um ano");
+});
+test("admin permanece protegido", async ({ page }) => {
+  await page.goto("/admin");
+  await expect(
+    page.getByText("Configure o Supabase").or(page.getByLabel("E-mail")),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Salvar alterações" }),
+  ).toHaveCount(0);
+});

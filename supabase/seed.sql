@@ -1,0 +1,2 @@
+-- Public defaults are seeded by the invitation migration.
+-- Do not seed passwords or administrative users here.

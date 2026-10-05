@@ -1,0 +1,14 @@
+node_modules/
+.next/
+# Credenciais e configurações de ambiente (inclusive backups).
+.env*
+!.env.example
+env.local
+.vercel/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+.playwright-cli/
+output/
+supabase/.temp/
