@@ -1462,3 +1462,5 @@ cite {
   .page-navigation { gap: 8px; }
   .page-navigation button { flex: 1; padding: 10px 8px; gap: 7px; font-size: 11px; }
 }
+
+.page-navigation.is-hidden { visibility: hidden; }

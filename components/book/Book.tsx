@@ -548,8 +548,10 @@ export default function Book() {
       )}
       <footer className="reader-footer">
         <nav
-          className="page-navigation"
+          className={`page-navigation ${page < 0 ? "is-hidden" : ""}`}
           aria-label="Navegação do livro"
+          aria-hidden={page < 0}
+          inert={page < 0}
         >
           <button type="button" className="page-previous" disabled={page <= 0 || !!turn} onClick={() => navigate(-1)}>
             <span aria-hidden="true">←</span> Página anterior
