@@ -482,7 +482,12 @@ export default function Book() {
             ref={leafRef}
             onAnimationEnd={(e) => {
               if (e.target !== e.currentTarget) return;
-              if (e.animationName !== "turnNext" && e.animationName !== "turnPrev") return;
+              if (
+                !["turnNext", "turnPrev", "turnNextMobile", "turnPrevMobile"].includes(
+                  e.animationName,
+                )
+              )
+                return;
               if (page === -1) finishOpening();
               else if (turn) finishTurn(turn);
             }}
