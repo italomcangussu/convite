@@ -109,6 +109,8 @@ test("WebKit prepara a música antes de abrir e toca no gesto do usuário", asyn
     name: /Abrir o livro|Carregando música|Preparando convite/,
   });
 
+  await expect(page.locator(".audio-control")).toHaveCount(0);
+
   await audio.dispatchEvent("canplay");
   await expect(openButton).toBeEnabled();
   await openButton.click();
@@ -122,4 +124,7 @@ test("WebKit prepara a música antes de abrir e toca no gesto do usuário", asyn
       ),
     )
     .toBe(1);
+
+  await expect(page.locator(".active-page h2")).toBeVisible();
+  await expect(page.locator(".audio-control")).toHaveCount(1);
 });
