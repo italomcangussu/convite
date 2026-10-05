@@ -20,3 +20,9 @@ Princípio: a abertura é o momento mais importante. O livro só abre quando est
 - Música: botão com equalizador (barras animadas quando toca) e convite "Toque para ouvir a música" se o navegador recusar o `play()`.
 
 Regras de segurança para o Safari/iOS (não quebrar): sem 3D/backface no celular; só `transform`/`opacity` animam dentro das folhas; nenhuma animação de entrada nos filhos da folha ativa (ela substitui a folha de baixo por uma "janela" de dois quadros, e um fade de entrada piscaria); animações infinitas no botão usam `box-shadow` ou pseudo-elementos para não mudar a caixa do botão (o Playwright espera a posição estabilizar antes de clicar).
+
+## Confirmação de presença em modal e iPhone
+
+A intenção final do convite é a família digitar o nome e confirmar. Por isso o RSVP não é uma folha: a última página do livro ("Até as estrelas") termina com "Falta só um passo" e o botão de próxima página vira "Confirmar presença" (com anel de brilho), abrindo o modal. O capítulo continua contado como "07" para a conta fechar.
+
+Regras para o iPhone: o modal acompanha `visualViewport` (o iOS não redimensiona o layout com o teclado, só a área visível) e não é ancorado embaixo; inputs com 16px (sem zoom), `enterkeyhint="send"`, alvos de toque de 44px ou mais, `inert` no livro enquanto está aberto, foco devolvido ao botão ao fechar (o Safari não foca botões ao toque). Telefone deitado mostra um pedido para girar em vez de cortar o livro. `theme-color` igual ao céu do livro para a barra do Safari não destoar.

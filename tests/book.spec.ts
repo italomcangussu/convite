@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-test("abre o livro, navega pelas bordas e confirma sem fingir persistência", async ({
+test("abre o livro, navega pelas bordas e confirma pelo modal sem fingir persistência", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -24,22 +24,32 @@ test("abre o livro, navega pelas bordas e confirma sem fingir persistência", as
   box = (await leaf.boundingBox())!;
   await page.mouse.click(box.x + 8, box.y + box.height * 0.5);
   await expect(leaf.locator("h2")).toContainText("Há um ano");
-  for (let i = 0; i < 5; i++) {
+
+  // Cada virada é aguardada pelo resultado (a página mudou), não por um
+  // intervalo fixo: em WebKit lento a virada pode passar de 720 ms.
+  for (let n = 2; n <= 6; n++) {
     await page.locator(".book").focus();
     await page.keyboard.press("ArrowRight");
-    await page.waitForTimeout(720);
+    await expect(leaf.locator(".chapter-progress")).toContainText(`PÁGINA ${n}`);
   }
-  await page.locator(".active-page input").fill("Família Teste");
-  await page.locator(".active-page button").click();
-  await expect(leaf.getByRole("status")).toContainText(
+  await expect(leaf.locator("h2")).toContainText("Algumas estrelas");
+
+  // O livro termina aqui: "próxima" abre a confirmação em modal.
+  await page.getByRole("button", { name: "Confirmar presença" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel("Nome da família").fill("Família Teste");
+  await dialog.getByRole("button", { name: "Confirmar presença" }).click();
+  await expect(dialog.getByRole("status")).toContainText(
     /serão abertas|Não foi possível/,
   );
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+
   await page.locator(".book").focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(leaf.locator("h2")).toContainText("Algumas estrelas");
   await page.keyboard.press("ArrowLeft");
-  await page.waitForTimeout(720);
-  await expect(leaf.locator("h2")).toContainText("Tem um lugar");
+  await expect(leaf.locator(".chapter-progress")).toContainText("PÁGINA 5");
+  await expect(leaf.locator("h2")).toContainText("Presentes para");
   expect(errors).toEqual([]);
   await page.screenshot({
     path: `test-results/book-${test.info().project.name}.png`,

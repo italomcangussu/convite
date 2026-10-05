@@ -5,6 +5,8 @@ import { bookLoad } from "@/lib/loading";
 import { supabase } from "@/lib/supabase";
 import Scene from "./Scene";
 import InkStar from "./InkStar";
+import RsvpDialog from "./RsvpDialog";
+import SparkBurst from "./SparkBurst";
 import { useBookAudio } from "./useBookAudio";
 import { useInvitationContent } from "./useInvitationContent";
 const chapters = [
@@ -13,22 +15,15 @@ const chapters = [
   "O dia da aventura",
   "Nosso encontro",
   "Pequenos presentes",
-  "Sua família, nossa história",
   "Até as estrelas",
 ];
+/** The book ends here; the seventh chapter (RSVP) opens as a dialog. */
+const LAST_PAGE = chapters.length - 1;
+const CHAPTER_COUNT = String(chapters.length + 1).padStart(2, "0");
+const CONFIRMED =
+  "Presença confirmada. Esperamos vocês para viver essa aventura conosco.";
 /** After this long, slow artwork/fonts/music stop blocking the cover. */
 const SLOW_MS = 14_000;
-/** Stardust released from the spine when the cover opens. */
-const SPARKS = Array.from({ length: 14 }, (_, i) => {
-  const angle = ((i * 137.5) % 360) * (Math.PI / 180);
-  const reach = 70 + ((i * 37) % 90);
-  return {
-    dx: Math.round(Math.cos(angle) * reach),
-    dy: Math.round(Math.sin(angle) * reach) - 34,
-    delay: 120 + ((i * 53) % 340),
-    size: 2 + (i % 3),
-  };
-});
 type PageGesture = {
   pointerId: number;
   x: number;
@@ -60,11 +55,14 @@ export default function Book() {
     [settlingPage, setSettlingPage] = useState<number | null>(null),
     [art, setArt] = useState({ cover: false, rose: false, flight: false }),
     [fontsReady, setFontsReady] = useState(false),
-    [slow, setSlow] = useState(false);
+    [slow, setSlow] = useState(false),
+    [rsvpOpen, setRsvpOpen] = useState(false),
+    [celebrate, setCelebrate] = useState(false);
   const bookRef = useRef<HTMLDivElement>(null);
   const leafRef = useRef<HTMLElement>(null);
   const gesture = useRef<PageGesture | null>(null);
   const spring = useRef<Animation | null>(null);
+  const nextButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     leafRef.current?.scrollTo({ top: 0 });
   }, [page]);
@@ -120,7 +118,7 @@ export default function Book() {
     bookRef.current?.style.removeProperty("--drag-edge");
   }
   function navigate(direction: number, from?: TurnFrom) {
-    if (lock.current || page + direction < 0 || page + direction > 6) return;
+    if (lock.current || page + direction < 0 || page + direction > LAST_PAGE) return;
     lock.current = true;
     spring.current?.cancel();
     spring.current = null;
@@ -145,7 +143,7 @@ export default function Book() {
   function finishTurn(direction: number) {
     if (!lock.current) return;
     if (timer.current) clearTimeout(timer.current);
-    const nextPage = Math.min(6, Math.max(0, page + direction));
+    const nextPage = Math.min(LAST_PAGE, Math.max(0, page + direction));
     setSettlingPage(nextPage);
     setPage(nextPage);
     setTurn(0);
@@ -190,6 +188,15 @@ export default function Book() {
     void audio.play();
     beginOpening();
   }
+  function openRsvp() {
+    if (lock.current) return;
+    setRsvpOpen(true);
+  }
+  // On the last page "next" is the RSVP dialog instead of another sheet.
+  function goNext() {
+    if (page === LAST_PAGE) openRsvp();
+    else navigate(1);
+  }
   function finishOpening() {
     if (timer.current) clearTimeout(timer.current);
     setPage(0);
@@ -220,9 +227,10 @@ export default function Book() {
     setStatus(
       error && error.code !== "23505"
         ? "Não foi possível confirmar agora. Tente novamente."
-        : "Presença confirmada. Esperamos vocês para viver essa aventura conosco.",
+        : CONFIRMED,
     );
     if (!error || error.code === "23505") {
+      setCelebrate(!error);
       localStorage.setItem("vicente-rsvp", requestId.current);
       localStorage.setItem("vicente-family", family.trim());
     }
@@ -233,9 +241,7 @@ export default function Book() {
     requestId.current = localStorage.getItem("vicente-rsvp") || "";
     if (requestId.current) {
       setFamily(localStorage.getItem("vicente-family") || "");
-      setStatus(
-        "Presença confirmada. Esperamos vocês para viver essa aventura conosco.",
-      );
+      setStatus(CONFIRMED);
     }
   }, []);
   const links = maps(content.address);
@@ -271,12 +277,12 @@ export default function Book() {
             ? "Toque uma vez: a música começa junto com o livro."
             : "Toque para abrir o livro.";
 
-  function body(p: number, behind = false) {
+  function body(p: number) {
     return (
       <>
         <div className="chapter">
           <span className="chapter-progress">
-            PÁGINA {p + 1} <i>·</i> 07
+            PÁGINA {p + 1} <i>·</i> {CHAPTER_COUNT}
           </span>
           <span className="chapter-title">{chapters[p]}</span>
         </div>
@@ -375,52 +381,14 @@ export default function Book() {
         )}
         {p === 5 && (
           <>
-            <p className="eyebrow">Uma aventura é melhor em companhia</p>
-            <h2>
-              Tem um lugar
-              <br />
-              para vocês
-              <br />
-              <em>nas nossas estrelas.</em>
-            </h2>
-            <p className="narrative">{content.rsvpText}</p>
-            <form className="rsvp" onSubmit={confirm}>
-              <label htmlFor={behind ? "family-preview" : "family"}>
-                Nome da família
-              </label>
-              <input
-                id={behind ? "family-preview" : "family"}
-                value={family}
-                onChange={(e) => setFamily(e.target.value)}
-                maxLength={120}
-                autoComplete="name"
-                placeholder="Família…"
-                required
-              />
-              <button
-                disabled={busy || status.startsWith("Presença confirmada")}
-              >
-                {busy ? "Confirmando…" : "Confirmar presença"}{" "}
-                <span>
-                  <InkStar />
-                </span>
-              </button>
-              <p className="feedback" role="status">
-                {status}
-              </p>
-            </form>
-            <div className="orbit-symbol small">
-              <InkStar />
-            </div>
-          </>
-        )}
-        {p === 6 && (
-          <>
             <p className="eyebrow">Esta história continua com você</p>
             <h2>{content.closing}</h2>
             <Scene variant={6} />
             <p className="closing-name">{content.name}</p>
             <p className="small-sign">{content.age} de um amor infinito</p>
+            <p className="last-step">
+              Falta só um passo: confirmar a presença da sua família.
+            </p>
           </>
         )}
         <span className="folio">
@@ -428,7 +396,7 @@ export default function Book() {
           <span>
             <InkStar />
           </span>{" "}
-          07
+          {CHAPTER_COUNT}
         </span>
       </>
     );
@@ -437,7 +405,7 @@ export default function Book() {
   // The sheet revealed by a turn (or by a drag in progress) lives under the leaf.
   const underPage =
     settlingPage ??
-    (page < 0 ? 0 : Math.min(6, Math.max(0, page + (turn || dragDir))));
+    (page < 0 ? 0 : Math.min(LAST_PAGE, Math.max(0, page + (turn || dragDir))));
   return (
     <main className="universe" data-phase={page >= 0 ? "open" : phase}>
       <div className="ambient-stars" aria-hidden="true">
@@ -461,7 +429,7 @@ export default function Book() {
       <div className={`outer-label ${page >= 0 ? "is-hidden" : ""}`} aria-hidden={page >= 0}>
         UM CONVITE ESCRITO NAS ESTRELAS
       </div>
-      <div className="book-stage">
+      <div className="book-stage" inert={rsvpOpen}>
         <div
           ref={bookRef}
           className={`book ${page === -1 ? "closed" : "is-open"} ${page === -1 && turn ? "is-opening" : ""} ${turn ? "turning" : ""} ${dragging ? "is-dragging" : ""}`}
@@ -470,7 +438,7 @@ export default function Book() {
             if (e.key === "ArrowRight") {
               e.preventDefault();
               if (page === -1) open();
-              else navigate(1);
+              else goNext();
             }
             if (e.key === "ArrowLeft") {
               e.preventDefault();
@@ -494,7 +462,7 @@ export default function Book() {
             aria-hidden="true"
             inert
           >
-            {body(underPage, true)}
+            {body(underPage)}
           </article>
           <article
             ref={leafRef}
@@ -568,7 +536,7 @@ export default function Book() {
               // The leaf follows the finger. At the first/last page there is
               // nothing to reveal, so it only gives a little (rubber band).
               const direction = dx < 0 ? 1 : -1;
-              const atEdge = page + direction < 0 || page + direction > 6;
+              const atEdge = page + direction < 0 || page + direction > LAST_PAGE;
               const travelled = Math.max(-1, Math.min(1, dx / active.width));
               const eased = atEdge
                 ? Math.sign(travelled) * Math.min(0.1, Math.abs(travelled) * 0.3)
@@ -599,7 +567,7 @@ export default function Book() {
                 active.axis === "horizontal" &&
                 (Math.abs(dx) > Math.max(42, active.width * 0.16) ||
                   (Math.abs(dx) > 22 && Math.abs(active.velocity) > 0.45));
-              const atEdge = page + direction < 0 || page + direction > 6;
+              const atEdge = page + direction < 0 || page + direction > LAST_PAGE;
               if (commits && !atEdge) {
                 navigate(direction, {
                   px: active.px,
@@ -608,10 +576,12 @@ export default function Book() {
                 });
               } else if (active.axis === "horizontal") {
                 springBack();
+                // Pulling past the last page asks for the RSVP.
+                if (commits && direction === 1 && page === LAST_PAGE) openRsvp();
               } else if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
                 const rect = e.currentTarget.getBoundingClientRect();
                 if (e.clientX - rect.left < rect.width * 0.16) navigate(-1);
-                if (e.clientX - rect.left > rect.width * 0.84) navigate(1);
+                if (e.clientX - rect.left > rect.width * 0.84) goNext();
               }
             }}
             onPointerCancel={() => {
@@ -679,24 +649,7 @@ export default function Book() {
             )}
           </article>
         </div>
-        {page === -1 && turn === 1 && (
-          <div className="spark-burst" aria-hidden="true">
-            {SPARKS.map((spark, i) => (
-              <i
-                key={i}
-                style={
-                  {
-                    "--dx": `${spark.dx}px`,
-                    "--dy": `${spark.dy}px`,
-                    animationDelay: `${spark.delay}ms`,
-                    width: spark.size,
-                    height: spark.size,
-                  } as CSSProperties
-                }
-              />
-            ))}
-          </div>
-        )}
+        {page === -1 && turn === 1 && <SparkBurst />}
       </div>
       {/* Hidden: fetches the remaining illustrations before the book opens so
           no picture pops in while a page is turning. */}
@@ -705,6 +658,11 @@ export default function Book() {
         <Scene variant={3} eager onReady={() => markArt("flight")} />
       </div>
       <audio ref={audio.ref} loop preload="auto" {...audio.elementProps} />
+      {/* iPhone on its side: the book is made to be read standing up. */}
+      <div className="rotate-hint" role="status">
+        <span className="rotate-phone" aria-hidden="true" />
+        <p>Gire o celular para ler o convite em pé</p>
+      </div>
       {page >= 0 && audioUrl && audio.status !== "failed" && (
         <button
           className={`audio-control ${audio.playing ? "is-playing" : ""} ${audio.started && !audio.blocked ? "" : "needs-tap"}`}
@@ -725,7 +683,7 @@ export default function Book() {
           )}
         </button>
       )}
-      <footer className="reader-footer">
+      <footer className="reader-footer" inert={rsvpOpen}>
         <nav
           className={`page-navigation ${page < 0 ? "is-hidden" : ""}`}
           aria-label="Navegação do livro"
@@ -735,11 +693,43 @@ export default function Book() {
           <button type="button" className="page-previous" disabled={page <= 0 || !!turn} onClick={() => navigate(-1)}>
             <span aria-hidden="true">←</span> Página anterior
           </button>
-          <button type="button" className="page-next" disabled={page >= 6 || !!turn} onClick={() => page < 0 ? open() : navigate(1)}>
-            Próxima página <span aria-hidden="true">→</span>
+          <button
+            ref={nextButton}
+            type="button"
+            className={`page-next ${page === LAST_PAGE ? "is-final" : ""}`}
+            disabled={!!turn}
+            onClick={() => (page < 0 ? open() : goNext())}
+          >
+            {page === LAST_PAGE ? (
+              <>
+                Confirmar presença{" "}
+                <span aria-hidden="true">
+                  <InkStar />
+                </span>
+              </>
+            ) : (
+              <>
+                Próxima página <span aria-hidden="true">→</span>
+              </>
+            )}
           </button>
         </nav>
       </footer>
+      {rsvpOpen && (
+        <RsvpDialog
+          text={content.rsvpText}
+          family={family}
+          onFamily={setFamily}
+          status={status}
+          confirmed={status === CONFIRMED}
+          busy={busy}
+          celebrate={celebrate}
+          chapter={`PÁGINA ${chapters.length + 1} · ${CHAPTER_COUNT}`}
+          onSubmit={confirm}
+          onClose={() => setRsvpOpen(false)}
+          returnFocus={nextButton}
+        />
+      )}
     </main>
   );
 }

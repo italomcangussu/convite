@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 const poppins = Poppins({
@@ -8,6 +8,12 @@ const poppins = Poppins({
   variable: "--font-poppins",
   display: "swap",
 });
+// Same colour as the night sky: Safari tints the status bar and the toolbar
+// with it, so there is no light strip around the book on the iPhone.
+export const viewport: Viewport = {
+  themeColor: "#091421",
+  colorScheme: "dark",
+};
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.SITE_URL || "http://localhost:3000",

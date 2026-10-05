@@ -14,3 +14,8 @@ Uma entrada por sessão: data, o que mudou no contexto e por quê.
 - Commits: 75f3a2c (helpers de áudio/gate), b79bc5b (gate de carregamento, áudio no toque, virada que segue o dedo, capa), d59d1dc (vinheta do planeta, docs) + commit de contexto.
 - Integração: sessão em nuvem restrita à branch `claude/fabuloso-design-animations-audio-fezvmm`; não houve merge na principal, o trabalho segue em PR (rascunho).
 - Observação: áudio/virada 2D não foram validados em iPhone real nem em WebKit (sem WebKit nesta máquina).
+
+## 2026-10-05 — sessão (cont.): iPhone + RSVP em modal
+- PR #1 foi mergeado pelo usuário antes do CI terminar; o CI (WebKit móvel, `book.spec.ts` "abre o livro, navega pelas bordas…") já falhava no commit base 38d4e94 (esperas fixas de 720 ms entre viradas).
+- Mudança estrutural: o RSVP deixou de ser folha do livro e virou modal (`RsvpDialog`, `SparkBurst`); o livro passou a ter 6 folhas. `arquitetura.md` e `CLAUDE.md` atualizados.
+- iPhone: `viewport` (theme-color), aviso de telefone deitado, alvo de toque de 48 px no botão de música, fallback `100vh` antes de `svh/dvh`.
