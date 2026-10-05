@@ -16,9 +16,8 @@ export const metadata: Metadata = {
   description:
     "Você está convidado para viver conosco uma pequena grande aventura.",
   openGraph: {
-    title: "Vicente Mateus — 1 ano",
+    title: "O Pequeno Príncipe — Vicente Mateus · 1 ano",
     description: "Uma pequena grande aventura sob as estrelas.",
-    images: ["/og.svg"],
   },
   robots: { index: false, follow: false },
 };
