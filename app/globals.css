@@ -351,7 +351,7 @@ h1 span {
   text-transform: uppercase;
   padding: 12px 18px;
 }
-.open-book span {
+.open-book-arrow {
   margin-left: 15px;
   color: var(--gold);
   font-size: 18px;
@@ -1104,7 +1104,7 @@ cite {
   padding: 13px 20px;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
-.open-book span {
+.open-book-arrow {
   margin-left: 0;
   color: inherit;
   font-size: 22px;
@@ -1117,6 +1117,36 @@ cite {
 .open-book:active {
   transform: translateY(3px);
   box-shadow: 0 2px 0 #8d7345;
+}
+.open-book:disabled,
+.open-book:disabled:hover,
+.open-book:disabled:active {
+  cursor: wait;
+  opacity: 0.9;
+  transform: none;
+  box-shadow: 0 5px 0 #8d7345, 0 9px 22px #0004;
+}
+.open-book.is-loading {
+  background: linear-gradient(135deg, #ead8ad, #c9ad73);
+}
+.open-book-spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border: 2px solid #13263b55;
+  border-top-color: #13263b;
+  border-radius: 50%;
+  animation: open-book-spin 0.8s linear infinite;
+}
+.open-book-label {
+  color: inherit;
+  font: inherit;
+  line-height: 1.2;
+}
+@keyframes open-book-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .open-book-hint {
   margin-top: 13px;
